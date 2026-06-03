@@ -25,8 +25,8 @@ class UpdateSalesRealizationRequest extends FormRequest
         return [
             'year' => 'required|integer|min:2000',
             'month' => 'required|integer|min:1|max:12',
-            'sales_member_id' => 'required|exists:sales_members,id',
-            'entity_id' => 'required|exists:entities,id',
+            'sales_member_name' => 'required|string|max:255',
+            'entity_name' => 'required|string|max:255',
             'realization_amount' => 'required|numeric|min:0',
         ];
     }

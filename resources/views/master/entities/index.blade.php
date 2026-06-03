@@ -3,52 +3,72 @@
 @section('header', 'Master Entity')
 
 @section('content')
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-4">
-        <form action="{{ route('entities.index') }}" method="GET" class="flex space-x-2">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or code..." class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Search</button>
-        </form>
-        <a href="{{ route('entities.create') }}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700">+ Tambah Entity</a>
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 xl:p-6" x-data="{ 
+    isAddOpen: false, 
+    isEditOpen: false, 
+    editData: {},
+    openEdit(data) { this.editData = data; this.isEditOpen = true; }
+}">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-5">
+        <div>
+            <a href="{{ route('sales-management.index') }}" class="text-xs text-slate-400 hover:text-blue-600 font-semibold flex items-center w-max mb-2 transition uppercase tracking-wider">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Manajemen Sales
+            </a>
+            <h2 class="text-xl xl:text-2xl font-bold text-slate-800 flex items-center">
+                <span class="bg-amber-100 text-amber-600 p-2 rounded-lg mr-3 shadow-sm">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </span>
+                Master Entity
+            </h2>
+        </div>
+        <div class="flex space-x-3 w-full md:w-auto">
+            <form action="{{ route('entities.index') }}" method="GET" class="flex flex-1 md:w-64 relative group">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode atau nama..." class="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all bg-slate-50 focus:bg-white placeholder-slate-400">
+            </form>
+            <button @click="isAddOpen = true" class="bg-amber-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-amber-600 hover:-translate-y-0.5 hover:shadow-md transition-all whitespace-nowrap flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Entity
+            </button>
+        </div>
     </div>
-
-    @if(session('success'))
-        <div class="bg-emerald-50 text-emerald-600 p-4 rounded-lg mb-4 text-sm">{{ session('success') }}</div>
-    @endif
 
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                    <th class="px-6 py-3 font-semibold">Code</th>
-                    <th class="px-6 py-3 font-semibold">Name</th>
-                    <th class="px-6 py-3 font-semibold">Status</th>
-                    <th class="px-6 py-3 font-semibold text-right">Aksi</th>
+                    <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Code</th>
+                    <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Name</th>
+                    <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Status</th>
+                    <th class="px-4 py-3 font-bold whitespace-nowrap text-xs text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 text-sm">
                 @forelse($entities as $entity)
                 <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4">{{ $entity->code }}</td>
-                    <td class="px-6 py-4 font-medium text-gray-900">{{ $entity->name }}</td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-2.5 whitespace-nowrap text-xs">{{ $entity->code }}</td>
+                    <td class="px-4 py-2.5 whitespace-nowrap text-xs font-medium text-gray-900">{{ $entity->name }}</td>
+                    <td class="px-4 py-2.5 whitespace-nowrap text-xs">
                         @if($entity->status)
                             <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">Active</span>
                         @else
                             <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">Inactive</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 text-right space-x-2">
-                        <a href="{{ route('entities.edit', $entity) }}" class="text-blue-600 hover:text-blue-800 font-medium">Edit</a>
-                        <form action="{{ route('entities.destroy', $entity) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin hapus entity ini?')">
+                    <td class="px-4 py-2.5 whitespace-nowrap text-xs text-right space-x-2">
+                        <button @click="openEdit({ id: {{ $entity->id }}, code: '{{ $entity->code }}', name: '{{ $entity->name }}', status: {{ $entity->status }} })" class="text-blue-600 hover:text-blue-800 font-medium mx-1">Edit</button>
+                        <form id="delete-entity-{{ $entity->id }}" action="{{ route('entities.destroy', $entity) }}" method="POST" class="inline-block">
                             @csrf @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                            <button type="button" onclick="confirmDelete('delete-entity-{{ $entity->id }}', 'Yakin hapus entitas ini?')" class="text-red-600 hover:text-red-800 font-medium mx-1">Hapus</button>
                         </form>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada data.</td>
+                    <td colspan="4" class="px-4 py-2.5 whitespace-nowrap text-xs text-center text-gray-500">Tidak ada data.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -57,6 +77,64 @@
     
     <div class="mt-4">
         {{ $entities->links() }}
+    </div>
+
+    <!-- Add Modal -->
+    <div x-show="isAddOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md" @click.away="isAddOpen = false">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Entity</h3>
+            <form action="{{ route('entities.store') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Code</label>
+                    <input type="text" name="code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" name="name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="isAddOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
+                    <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div x-show="isEditOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md" @click.away="isEditOpen = false">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Entity</h3>
+            <form :action="`/master/entities/${editData.id}`" method="POST">
+                @csrf @method('PUT')
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Code</label>
+                    <input type="text" name="code" x-model="editData.code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" name="name" x-model="editData.name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" x-model="editData.status" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="isEditOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
+                    <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 @endsection

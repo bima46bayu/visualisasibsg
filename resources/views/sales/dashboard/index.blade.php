@@ -5,40 +5,42 @@
 <div class="space-y-6 max-w-[1600px] mx-auto pb-10 font-sans text-slate-800 mt-2">
 
     <div class="flex justify-between items-center mb-2">
-        <h2 class="text-3xl font-bold text-slate-900">Dashboard</h2>
+        <h2 class="text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900">Dashboard</h2>
         <!-- <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors">+ New Report</button> -->
     </div>
 
     <!-- Filter Section -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col md:flex-row gap-4 items-center justify-between mb-8">
-        <h3 class="text-lg font-semibold text-slate-800">My Sales Analytics</h3>
-        <form action="{{ route('dashboard') }}" method="GET" class="flex flex-wrap gap-3 items-center">
-            <select name="year" class="border-slate-300 text-slate-700 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-2 px-3">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 xl:p-5 flex flex-col xl:flex-row gap-4 items-start xl:items-center justify-between mb-8">
+        <h3 class="text-base xl:text-lg font-semibold text-slate-800 whitespace-nowrap">My Sales Analytics</h3>
+        <form action="{{ route('dashboard') }}" method="GET" class="flex flex-wrap gap-2 xl:gap-3 items-center w-full xl:w-auto">
+            <select name="year" class="border-slate-300 text-slate-700 rounded-md text-xs xl:text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-1.5 px-2.5 xl:py-2 xl:px-3 flex-1 sm:flex-none min-w-[120px]">
                 <option value="">Semua Tahun</option>
                 @for($y = date('Y') - 2; $y <= date('Y') + 2; $y++)
                     <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
                 @endfor
             </select>
-            <select name="month" class="border-slate-300 text-slate-700 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-2 px-3">
+            <select name="month" class="border-slate-300 text-slate-700 rounded-md text-xs xl:text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-1.5 px-2.5 xl:py-2 xl:px-3 flex-1 sm:flex-none min-w-[120px]">
                 <option value="">Semua Bulan</option>
                 @for($m = 1; $m <= 12; $m++)
-                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>Bulan {{ $m }}</option>
+                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
                 @endfor
             </select>
-            <select name="team_id" class="border-slate-300 text-slate-700 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-2 px-3">
+            <select name="team_id" class="border-slate-300 text-slate-700 rounded-md text-xs xl:text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-1.5 px-2.5 xl:py-2 xl:px-3 flex-1 sm:flex-none min-w-[120px]">
                 <option value="">Semua Team</option>
                 @foreach(\App\Models\Team::all() as $team)
                     <option value="{{ $team->id }}" {{ request('team_id') == $team->id ? 'selected' : '' }}>{{ $team->name }}</option>
                 @endforeach
             </select>
-            <select name="entity_id" class="border-slate-300 text-slate-700 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-2 px-3">
+            <select name="entity_id" class="border-slate-300 text-slate-700 rounded-md text-xs xl:text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm py-1.5 px-2.5 xl:py-2 xl:px-3 flex-1 sm:flex-none min-w-[120px]">
                 <option value="">Semua Entity</option>
                 @foreach(\App\Models\Entity::all() as $entity)
                     <option value="{{ $entity->id }}" {{ request('entity_id') == $entity->id ? 'selected' : '' }}>{{ $entity->name }}</option>
                 @endforeach
             </select>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Terapkan</button>
-            <a href="{{ route('dashboard') }}" class="text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors ml-1">Reset</a>
+            <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 xl:px-4 xl:py-2 rounded-md text-xs xl:text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm flex-1 sm:flex-none">Terapkan</button>
+                <a href="{{ route('dashboard') }}" class="text-xs xl:text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors px-2 py-1.5 xl:py-2 flex items-center justify-center">Reset</a>
+            </div>
         </form>
     </div>
 
@@ -68,64 +70,64 @@
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         
         <!-- Card 1: Blue -->
-        <div class="bg-blue-50/50 rounded-2xl border border-blue-100 p-5 flex flex-col justify-center h-full relative overflow-hidden">
-            <div class="text-slate-500 font-medium text-sm mb-1 z-10">Total Realisasi (Rp)</div>
-            <div class="text-3xl font-bold text-slate-900 mb-2 z-10">{{ number_format($data['total_realization'], 0, ',', '.') }}</div>
-            <div class="text-xs font-medium text-slate-400 z-10">
+        <div class="bg-blue-50/50 rounded-2xl border border-blue-100 p-4 xl:p-5 flex flex-col justify-center h-full relative overflow-hidden">
+            <div class="text-slate-500 font-medium text-[11px] xl:text-sm mb-1 z-10">Total Realisasi (Rp)</div>
+            <div class="text-lg md:text-xl xl:text-3xl font-bold text-slate-900 mb-2 z-10 truncate">{{ number_format($data['total_realization'], 0, ',', '.') }}</div>
+            <div class="text-[10px] xl:text-xs font-medium text-slate-400 z-10">
                 <span class="{{ getStatusColor($data['overall_achievement_percentage']) }}">Achievement: {{ number_format($data['overall_achievement_percentage'], 1) }}%</span>
             </div>
-            <div class="absolute top-4 right-4 w-8 h-8 rounded border border-blue-200 flex items-center justify-center text-blue-500 bg-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="absolute top-3 right-3 xl:top-4 xl:right-4 w-6 h-6 xl:w-8 xl:h-8 rounded border border-blue-200 flex items-center justify-center text-blue-500 bg-white">
+                <svg class="w-3 h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
         </div>
 
         <!-- Card 2: Purple -->
-        <div class="bg-purple-50/50 rounded-2xl border border-purple-100 p-5 flex flex-col justify-center h-full relative overflow-hidden">
-            <div class="text-slate-500 font-medium text-sm mb-1 z-10">Total Target (Rp)</div>
-            <div class="text-3xl font-bold text-slate-900 mb-2 z-10">{{ number_format($data['total_target'], 0, ',', '.') }}</div>
-            <div class="text-xs font-medium text-slate-400 z-10">
+        <div class="bg-purple-50/50 rounded-2xl border border-purple-100 p-4 xl:p-5 flex flex-col justify-center h-full relative overflow-hidden">
+            <div class="text-slate-500 font-medium text-[11px] xl:text-sm mb-1 z-10">Total Target (Rp)</div>
+            <div class="text-lg md:text-xl xl:text-3xl font-bold text-slate-900 mb-2 z-10 truncate">{{ number_format($data['total_target'], 0, ',', '.') }}</div>
+            <div class="text-[10px] xl:text-xs font-medium text-slate-400 z-10">
                 Base Target Set
             </div>
-            <div class="absolute top-4 right-4 w-8 h-8 rounded border border-purple-200 flex items-center justify-center text-purple-500 bg-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="absolute top-3 right-3 xl:top-4 xl:right-4 w-6 h-6 xl:w-8 xl:h-8 rounded border border-purple-200 flex items-center justify-center text-purple-500 bg-white">
+                <svg class="w-3 h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
         </div>
 
         <!-- Card 3: Emerald -->
-        <div class="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-5 flex flex-col justify-center h-full relative overflow-hidden">
-            <div class="text-slate-500 font-medium text-sm mb-1 z-10">Overall Achievement</div>
-            <div class="text-3xl font-bold text-slate-900 mb-2 z-10">{{ number_format($data['overall_achievement_percentage'], 1) }}%</div>
-            <div class="text-xs font-medium text-slate-400 z-10">
+        <div class="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-4 xl:p-5 flex flex-col justify-center h-full relative overflow-hidden">
+            <div class="text-slate-500 font-medium text-[11px] xl:text-sm mb-1 z-10">Overall Achievement</div>
+            <div class="text-lg md:text-xl xl:text-3xl font-bold text-slate-900 mb-2 z-10 truncate">{{ number_format($data['overall_achievement_percentage'], 1) }}%</div>
+            <div class="text-[10px] xl:text-xs font-medium text-slate-400 z-10">
                 Dari target setahun
             </div>
-            <div class="absolute top-4 right-4 w-8 h-8 rounded border border-emerald-200 flex items-center justify-center text-emerald-500 bg-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <div class="absolute top-3 right-3 xl:top-4 xl:right-4 w-6 h-6 xl:w-8 xl:h-8 rounded border border-emerald-200 flex items-center justify-center text-emerald-500 bg-white">
+                <svg class="w-3 h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
             </div>
         </div>
 
         <!-- Card 4: Orange -->
-        <div class="bg-orange-50/50 rounded-2xl border border-orange-100 p-5 flex flex-col justify-center h-full relative overflow-hidden">
-            <div class="text-slate-500 font-medium text-sm mb-1 z-10">Top Entity</div>
+        <div class="bg-orange-50/50 rounded-2xl border border-orange-100 p-4 xl:p-5 flex flex-col justify-center h-full relative overflow-hidden">
+            <div class="text-slate-500 font-medium text-[11px] xl:text-sm mb-1 z-10">Top Entity</div>
             @php
                 $topEnt = collect($data['achievement_per_entity'])->sortByDesc('realization')->first();
             @endphp
-            <div class="text-2xl font-bold text-slate-900 mb-2 z-10">{{ $topEnt ? $topEnt['entity'] : '-' }}</div>
-            <div class="text-xs font-medium text-slate-400 z-10">
+            <div class="text-base md:text-lg xl:text-2xl font-bold text-slate-900 mb-2 z-10 truncate">{{ $topEnt ? $topEnt['entity'] : '-' }}</div>
+            <div class="text-[10px] xl:text-xs font-medium text-slate-400 z-10">
                 Penyumbang tertinggi
             </div>
-            <div class="absolute top-4 right-4 w-8 h-8 rounded border border-orange-200 flex items-center justify-center text-orange-500 bg-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+            <div class="absolute top-3 right-3 xl:top-4 xl:right-4 w-6 h-6 xl:w-8 xl:h-8 rounded border border-orange-200 flex items-center justify-center text-orange-500 bg-white">
+                <svg class="w-3 h-3 xl:w-4 xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
             </div>
         </div>
     </div>
 
 
     <!-- Monthly Trend Chart -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-base font-semibold text-slate-800">Target vs Realisasi (Monthly Trend)</h3>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 mb-8">
+        <div class="flex justify-between items-center mb-4 lg:mb-6">
+            <h3 class="text-sm lg:text-base font-semibold text-slate-800">Target vs Realisasi (Monthly Trend)</h3>
         </div>
-        <div class="h-[300px] w-full">
+        <div class="h-[250px] lg:h-[300px] w-full">
             <canvas id="monthlyChart"></canvas>
         </div>
     </div>
@@ -134,17 +136,17 @@
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
         
         <!-- Left (span 2): Bar Chart -->
-        <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
-            <h3 class="text-base font-semibold text-slate-800 mb-4">Team Achievement</h3>
-            <div class="h-[300px] w-full">
+        <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 flex flex-col justify-between">
+            <h3 class="text-sm lg:text-base font-semibold text-slate-800 mb-4">Team Achievement</h3>
+            <div class="h-[250px] lg:h-[300px] w-full">
                 <canvas id="teamChart"></canvas>
             </div>
         </div>
 
         <!-- Right (span 1): Donut Chart -->
-        <div class="xl:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
-            <h3 class="text-base font-semibold text-slate-800 mb-4">Entity Distribution</h3>
-            <div class="h-[300px] w-full flex justify-center">
+        <div class="xl:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 flex flex-col justify-between">
+            <h3 class="text-sm lg:text-base font-semibold text-slate-800 mb-4">Entity Distribution</h3>
+            <div class="h-[250px] lg:h-[300px] w-full flex justify-center">
                 <canvas id="entityChart"></canvas>
             </div>
         </div>

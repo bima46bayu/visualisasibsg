@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\SalesTarget;
 use App\Models\SalesRealization;
+use App\Models\SalesMember;
+use App\Models\Entity;
 use Illuminate\Http\Request;
 
 class SalesManagementController extends Controller
@@ -30,6 +32,9 @@ class SalesManagementController extends Controller
         }
         $sales_realizations = $realisasiQuery->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate(10, ['*'], 'realisasi_page');
 
-        return view('sales.management.index', compact('sales_targets', 'sales_realizations'));
+        $sales_members = SalesMember::all();
+        $entities = Entity::all();
+
+        return view('sales.management.index', compact('sales_targets', 'sales_realizations', 'sales_members', 'entities'));
     }
 }

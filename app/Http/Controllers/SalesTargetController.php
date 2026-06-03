@@ -35,11 +35,19 @@ class SalesTargetController extends Controller
 
     public function store(StoreSalesTargetRequest $request)
     {
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+
         SalesTarget::updateOrCreate(
-            $request->only(['year', 'month', 'sales_member_id', 'entity_id']),
+            [
+                'year' => $request->year,
+                'month' => $request->month,
+                'sales_member_id' => $salesMember->id,
+                'entity_id' => $entity->id
+            ],
             ['target_amount' => $request->target_amount]
         );
-        return redirect()->route('sales-targets.index')->with('success', 'Target berhasil ditambahkan.');
+        return redirect()->route('sales-management.index', ['tab' => 'target'])->with('success', 'Target berhasil ditambahkan.');
     }
 
     public function show(string $id)
@@ -47,23 +55,32 @@ class SalesTargetController extends Controller
         //
     }
 
-    public function edit(SalesTarget $sales_target)
+    public function edit(SalesTarget $target)
     {
         $sales_members = SalesMember::all();
         $entities = Entity::all();
-        return view('sales-targets.edit', compact('sales_target', 'sales_members', 'entities'));
+        return view('sales-targets.edit', compact('target', 'sales_members', 'entities'));
     }
 
-    public function update(UpdateSalesTargetRequest $request, SalesTarget $sales_target)
+    public function update(UpdateSalesTargetRequest $request, SalesTarget $target)
     {
-        $sales_target->update($request->validated());
-        return redirect()->route('sales-targets.index')->with('success', 'Target berhasil diupdate.');
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+
+        $target->update([
+            'year' => $request->year,
+            'month' => $request->month,
+            'sales_member_id' => $salesMember->id,
+            'entity_id' => $entity->id,
+            'target_amount' => $request->target_amount
+        ]);
+        return redirect()->route('sales-management.index', ['tab' => 'target'])->with('success', 'Target berhasil diupdate.');
     }
 
-    public function destroy(SalesTarget $sales_target)
+    public function destroy(SalesTarget $target)
     {
-        $sales_target->delete();
-        return redirect()->route('sales-targets.index')->with('success', 'Target berhasil dihapus.');
+        $target->delete();
+        return redirect()->route('sales-management.index', ['tab' => 'target'])->with('success', 'Target berhasil dihapus.');
     }
 
     public function import(Request $request)
@@ -71,12 +88,12 @@ class SalesTargetController extends Controller
         $request->validate(['file' => 'required|mimes:xlsx,xls']);
         try {
             Excel::import(new SalesTargetImport, $request->file('file'));
-            return redirect()->route('sales-targets.index')->with('success', 'Target berhasil diimport.');
+            return redirect()->route('sales-management.index', ['tab' => 'target'])->with('success', 'Target berhasil diimport.');
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
-            return redirect()->route('sales-targets.index')->with('error', 'Ada kesalahan pada baris excel. Pastikan data valid.');
+            return redirect()->route('sales-management.index', ['tab' => 'target'])->with('error', 'Ada kesalahan pada baris excel. Pastikan data valid.');
         } catch (\Exception $e) {
-            return redirect()->route('sales-targets.index')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->route('sales-management.index', ['tab' => 'target'])->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

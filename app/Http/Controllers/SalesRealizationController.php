@@ -35,11 +35,19 @@ class SalesRealizationController extends Controller
 
     public function store(StoreSalesRealizationRequest $request)
     {
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+
         SalesRealization::updateOrCreate(
-            $request->only(['year', 'month', 'sales_member_id', 'entity_id']),
+            [
+                'year' => $request->year,
+                'month' => $request->month,
+                'sales_member_id' => $salesMember->id,
+                'entity_id' => $entity->id
+            ],
             ['realization_amount' => $request->realization_amount]
         );
-        return redirect()->route('sales-realizations.index')->with('success', 'Realisasi berhasil ditambahkan.');
+        return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil ditambahkan.');
     }
 
     public function show(string $id)
@@ -47,23 +55,32 @@ class SalesRealizationController extends Controller
         //
     }
 
-    public function edit(SalesRealization $sales_realization)
+    public function edit(SalesRealization $realization)
     {
         $sales_members = SalesMember::all();
         $entities = Entity::all();
-        return view('sales-realizations.edit', compact('sales_realization', 'sales_members', 'entities'));
+        return view('sales-realizations.edit', compact('realization', 'sales_members', 'entities'));
     }
 
-    public function update(UpdateSalesRealizationRequest $request, SalesRealization $sales_realization)
+    public function update(UpdateSalesRealizationRequest $request, SalesRealization $realization)
     {
-        $sales_realization->update($request->validated());
-        return redirect()->route('sales-realizations.index')->with('success', 'Realisasi berhasil diupdate.');
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+
+        $realization->update([
+            'year' => $request->year,
+            'month' => $request->month,
+            'sales_member_id' => $salesMember->id,
+            'entity_id' => $entity->id,
+            'realization_amount' => $request->realization_amount
+        ]);
+        return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil diupdate.');
     }
 
-    public function destroy(SalesRealization $sales_realization)
+    public function destroy(SalesRealization $realization)
     {
-        $sales_realization->delete();
-        return redirect()->route('sales-realizations.index')->with('success', 'Realisasi berhasil dihapus.');
+        $realization->delete();
+        return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil dihapus.');
     }
 
     public function import(Request $request)
@@ -71,12 +88,12 @@ class SalesRealizationController extends Controller
         $request->validate(['file' => 'required|mimes:xlsx,xls']);
         try {
             Excel::import(new SalesRealizationImport, $request->file('file'));
-            return redirect()->route('sales-realizations.index')->with('success', 'Realisasi berhasil diimport.');
+            return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil diimport.');
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
-            return redirect()->route('sales-realizations.index')->with('error', 'Ada kesalahan pada baris excel. Pastikan data valid.');
+            return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('error', 'Ada kesalahan pada baris excel. Pastikan data valid.');
         } catch (\Exception $e) {
-            return redirect()->route('sales-realizations.index')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

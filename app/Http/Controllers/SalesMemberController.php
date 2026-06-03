@@ -19,7 +19,8 @@ class SalesMemberController extends Controller
                   ->orWhere('code', 'like', "%{$search}%");
         }
         $sales_members = $query->orderBy('id', 'desc')->paginate(10);
-        return view('master.sales-members.index', compact('sales_members'));
+        $teams = Team::all();
+        return view('master.sales-members.index', compact('sales_members', 'teams'));
     }
 
     public function create()
