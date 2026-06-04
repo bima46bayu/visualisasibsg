@@ -11,6 +11,15 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 
 class SalesRealizationImport implements ToModel, WithHeadingRow, WithValidation
 {
+    public function prepareForValidation($data, $index)
+    {
+        $months = ['Januari'=>1, 'Februari'=>2, 'Maret'=>3, 'April'=>4, 'Mei'=>5, 'Juni'=>6, 'Juli'=>7, 'Agustus'=>8, 'September'=>9, 'Oktober'=>10, 'November'=>11, 'Desember'=>12];
+        if (isset($data['bulan']) && !is_numeric($data['bulan'])) {
+            $data['bulan'] = $months[ucfirst(strtolower(trim($data['bulan'])))] ?? $data['bulan'];
+        }
+        return $data;
+    }
+
     public function model(array $row)
     {
         $salesMember = SalesMember::where('name', $row['am'])->first();

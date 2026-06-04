@@ -187,33 +187,87 @@
     </div>
 
     <!-- Entity Trend Line Charts -->
-    <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">Entity Performance Trends</h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        @foreach($data['entity_trends'] as $index => $trend)
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-            <div class="text-sm font-semibold text-slate-700 mb-4 text-center">
-                {{ $trend['entity'] }}
-            </div>
-            <div class="h-48 w-full">
-                <canvas id="entityLineChart_{{ $index }}"></canvas>
+    <div x-data="{ trendView: 'monthly' }">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 mb-4 gap-4">
+            <h3 class="text-lg font-semibold text-slate-800">Entity Performance Trends</h3>
+            <div class="bg-slate-100 p-1 rounded-lg flex inline-block shadow-sm">
+                <button @click="trendView = 'monthly'" :class="{'bg-white text-blue-600 shadow-sm': trendView === 'monthly', 'text-slate-500 hover:text-slate-700': trendView !== 'monthly'}" class="px-4 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Berdasarkan Bulan</button>
+                <button @click="trendView = 'yearly'" :class="{'bg-white text-blue-600 shadow-sm': trendView === 'yearly', 'text-slate-500 hover:text-slate-700': trendView !== 'yearly'}" class="px-4 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Berdasarkan Tahun</button>
             </div>
         </div>
-        @endforeach
+        
+        <!-- Monthly Grid -->
+        <div x-show="trendView === 'monthly'" x-transition class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            @foreach($data['entity_trends_monthly'] as $index => $trend)
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+                <div class="text-sm font-semibold text-slate-700 mb-4 text-center">
+                    {{ $trend['entity'] }}
+                </div>
+                <div class="h-48 w-full">
+                    <canvas id="entityLineChart_monthly_{{ $index }}"></canvas>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <!-- Yearly Grid -->
+        <div x-show="trendView === 'yearly'" x-transition style="display: none;" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            @foreach($data['entity_trends_yearly'] as $index => $trend)
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+                <div class="text-sm font-semibold text-slate-700 mb-4 text-center">
+                    {{ $trend['entity'] }}
+                </div>
+                <div class="h-48 w-full">
+                    <canvas id="entityLineChart_yearly_{{ $index }}"></canvas>
+                </div>
+            </div>
+            @endforeach
+        </div>
     </div>
 
     <!-- Pivot Tables -->
     @php
         $months = [1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April', 5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus', 9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'];
-        $currMonthName = $months[(int)$data['filter_meta']['curr_month']];
-        $prevMonthName = $data['filter_meta']['prev_month'] ? $months[(int)$data['filter_meta']['prev_month']] : '-';
+        $currMonthName = $months[(int)$data['filter_meta']['pivot_curr_month']];
+        $prevMonthName = $data['filter_meta']['pivot_prev_month'] ? $months[(int)$data['filter_meta']['pivot_prev_month']] : '-';
         $filterYear = $data['filter_meta']['year'];
+        $pivotCurr = (int)$data['filter_meta']['pivot_curr_month'];
     @endphp
 
-    <h3 class="text-lg font-semibold text-slate-800 mt-8 mb-2">Sales Achievement Pivot</h3>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-8 mb-4 gap-4">
+        <h3 class="text-lg font-semibold text-slate-800">Sales Achievement Pivot</h3>
+        
+        <div class="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-slate-100 p-1">
+            @if($pivotCurr > 1)
+                <a href="{{ request()->fullUrlWithQuery(['pivot_month' => $pivotCurr - 1]) }}#pivot-section" class="px-3 py-1.5 hover:bg-slate-50 text-slate-600 rounded-md transition text-xs font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Bulan Sebelumnya
+                </a>
+            @else
+                <span class="px-3 py-1.5 text-slate-300 rounded-md text-xs font-medium flex items-center cursor-not-allowed">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Bulan Sebelumnya
+                </span>
+            @endif
+            
+            <span class="text-sm font-semibold text-slate-700 px-3 py-1 bg-slate-50 rounded-md border border-slate-100">{{ $currMonthName }}</span>
+
+            @if($pivotCurr < 12)
+                <a href="{{ request()->fullUrlWithQuery(['pivot_month' => $pivotCurr + 1]) }}#pivot-section" class="px-3 py-1.5 hover:bg-slate-50 text-slate-600 rounded-md transition text-xs font-medium flex items-center">
+                    Bulan Berikutnya
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
+            @else
+                <span class="px-3 py-1.5 text-slate-300 rounded-md text-xs font-medium flex items-center cursor-not-allowed">
+                    Bulan Berikutnya
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            @endif
+        </div>
+    </div>
 
     <!-- Pivot Table 1: By AM -> Entity -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+    <div id="pivot-section" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 scroll-mt-24">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-right border-collapse whitespace-nowrap">
                 <thead>
@@ -540,10 +594,10 @@
             }
         });
 
-        // 4. Entity Line Charts (Grid)
-        const entityTrends = @json($data['entity_trends']);
-        entityTrends.forEach((trend, index) => {
-            const el = document.getElementById(`entityLineChart_${index}`);
+        // 4. Entity Line Charts (Monthly)
+        const entityTrendsMonthly = @json($data['entity_trends_monthly']);
+        entityTrendsMonthly.forEach((trend, index) => {
+            const el = document.getElementById(`entityLineChart_monthly_${index}`);
             if (el) {
                 const ctx = el.getContext('2d');
                 new Chart(ctx, {
@@ -580,12 +634,56 @@
                             tooltip: commonOptions.plugins.tooltip
                         },
                         scales: {
-                            y: { 
-                                beginAtZero: true, 
-                                display: true, 
-                                ticks: { maxTicksLimit: 5, font: {size: 10} }
-                            }, 
-                            x: { grid: {display: false}, ticks: { font: { size: 10 } } }
+                            y: { display: true, beginAtZero: true, border: {display: false}, grid: {color: '#f8fafc'}, ticks: {font: {size: 10}} },
+                            x: { grid: {display: false}, ticks: {font: {size: 10}} }
+                        }
+                    }
+                });
+            }
+        });
+
+        // 5. Entity Line Charts (Yearly)
+        const entityTrendsYearly = @json($data['entity_trends_yearly']);
+        entityTrendsYearly.forEach((trend, index) => {
+            const el = document.getElementById(`entityLineChart_yearly_${index}`);
+            if (el) {
+                const ctx = el.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: trend.years || trend.data.map(d => d.label),
+                        datasets: [
+                            {
+                                label: 'Target',
+                                data: trend.data.map(d => d.target),
+                                borderColor: '#cbd5e1', 
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Realisasi',
+                                data: trend.data.map(d => d.realization),
+                                borderColor: brightColors[index % brightColors.length], 
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                pointRadius: 3,
+                                pointBackgroundColor: '#ffffff',
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: commonOptions.plugins.tooltip
+                        },
+                        scales: {
+                            y: { display: true, beginAtZero: true, border: {display: false}, grid: {color: '#f8fafc'}, ticks: {font: {size: 10}} },
+                            x: { grid: {display: false}, ticks: {font: {size: 10}} }
                         }
                     }
                 });

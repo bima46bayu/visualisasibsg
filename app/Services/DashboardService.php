@@ -51,12 +51,15 @@ class DashboardService
             'achievement_per_entity' => $this->getEntityAchievement($filters),
             'monthly_trend' => $this->getMonthlyData($filters),
             'top_sales' => $this->getTopSalesMembers($filters),
-            'entity_trends' => $this->getEntityMonthlyTrends($filters),
+            'entity_trends_monthly' => $this->getEntityMonthlyTrends($filters),
+            'entity_trends_yearly' => $this->getEntityYearlyTrends($filters),
             'pivot_table' => $this->getPivotTableData($filters),
             'filter_meta' => [
                 'year' => $year,
                 'curr_month' => $filters['month'] ?? date('n'),
-                'prev_month' => ($filters['month'] ?? date('n')) > 1 ? ($filters['month'] ?? date('n')) - 1 : null
+                'prev_month' => ($filters['month'] ?? date('n')) > 1 ? ($filters['month'] ?? date('n')) - 1 : null,
+                'pivot_curr_month' => $filters['pivot_month'] ?? $filters['month'] ?? date('n'),
+                'pivot_prev_month' => ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) > 1 ? ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) - 1 : null
             ]
         ];
     }
@@ -99,10 +102,50 @@ class DashboardService
         return $data;
     }
 
+    private function getEntityYearlyTrends(array $filters)
+    {
+        $entities = \App\Models\Entity::all();
+        $baseYear = $filters['year'] ?? date('Y');
+        $years = range($baseYear - 2, $baseYear + 2);
+        
+        $targets = \App\Models\SalesTarget::whereIn('year', $years)
+            ->selectRaw('entity_id, year, sum(target_amount) as total')
+            ->groupBy('entity_id', 'year')
+            ->get()->groupBy('entity_id');
+            
+        $realizations = \App\Models\SalesRealization::whereIn('year', $years)
+            ->selectRaw('entity_id, year, sum(realization_amount) as total')
+            ->groupBy('entity_id', 'year')
+            ->get()->groupBy('entity_id');
+            
+        $data = [];
+        foreach ($entities as $entity) {
+            $eTargets = isset($targets[$entity->id]) ? $targets[$entity->id]->pluck('total', 'year')->toArray() : [];
+            $eReals = isset($realizations[$entity->id]) ? $realizations[$entity->id]->pluck('total', 'year')->toArray() : [];
+            
+            $yearly = [];
+            foreach ($years as $y) {
+                $yearly[] = [
+                    'label' => (string) $y,
+                    'target' => $eTargets[$y] ?? 0,
+                    'realization' => $eReals[$y] ?? 0,
+                ];
+            }
+            
+            $data[] = [
+                'entity' => $entity->name,
+                'data' => $yearly,
+                'years' => $years
+            ];
+        }
+        
+        return $data;
+    }
+
     private function getPivotTableData(array $filters)
     {
         $year = $filters['year'] ?? date('Y');
-        $month = $filters['month'] ?? date('n');
+        $month = $filters['pivot_month'] ?? $filters['month'] ?? date('n');
         $prevMonth = $month > 1 ? $month - 1 : null;
 
         $teams = Team::all()->keyBy('id');
