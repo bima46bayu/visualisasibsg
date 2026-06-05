@@ -35,19 +35,21 @@ class SalesRealizationController extends Controller
 
     public function store(StoreSalesRealizationRequest $request)
     {
-        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
-        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+        foreach ($request->realizations as $realizationData) {
+            $salesMember = SalesMember::firstOrCreate(['name' => $realizationData['sales_member_name']]);
+            $entity = Entity::firstOrCreate(['name' => $realizationData['entity_name']]);
 
-        SalesRealization::updateOrCreate(
-            [
-                'year' => $request->year,
-                'month' => $request->month,
-                'sales_member_id' => $salesMember->id,
-                'entity_id' => $entity->id
-            ],
-            ['realization_amount' => $request->realization_amount]
-        );
-        return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil ditambahkan.');
+            SalesRealization::updateOrCreate(
+                [
+                    'year' => $realizationData['year'],
+                    'month' => $realizationData['month'],
+                    'sales_member_id' => $salesMember->id,
+                    'entity_id' => $entity->id
+                ],
+                ['realization_amount' => $realizationData['realization_amount']]
+            );
+        }
+        return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', count($request->realizations) . ' Realisasi berhasil ditambahkan.');
     }
 
     public function show(string $id)
@@ -66,6 +68,17 @@ class SalesRealizationController extends Controller
     {
         $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
         $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+
+        $existing = SalesRealization::where('year', $request->year)
+            ->where('month', $request->month)
+            ->where('sales_member_id', $salesMember->id)
+            ->where('entity_id', $entity->id)
+            ->where('id', '!=', $realization->id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete(); // Timpa data lama (hapus yang lama, gunakan yang sedang diedit)
+        }
 
         $realization->update([
             'year' => $request->year,
@@ -91,7 +104,12 @@ class SalesRealizationController extends Controller
             return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil diimport.');
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             $failures = $e->failures();
-            return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('error', 'Ada kesalahan pada baris excel. Pastikan data valid.');
+            $errorMsg = 'Kesalahan pada excel: ';
+            foreach ($failures as $failure) {
+                $errorMsg .= 'Baris ' . $failure->row() . ' (' . implode(', ', $failure->errors()) . ') ';
+                break; // Ambil error pertama saja agar pesan tidak terlalu panjang
+            }
+            return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('error', trim($errorMsg));
         } catch (\Exception $e) {
             return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

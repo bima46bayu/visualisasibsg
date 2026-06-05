@@ -122,13 +122,22 @@
     </div>
 
 
-    <!-- Monthly Trend Chart -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 mb-8">
-        <div class="flex justify-between items-center mb-4 lg:mb-6">
-            <h3 class="text-sm lg:text-base font-semibold text-slate-800">Target vs Realisasi (Monthly Trend)</h3>
+    <!-- Overall Trend Chart (Monthly & Yearly) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 mb-8" x-data="{ mainTrendView: 'monthly' }">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 lg:mb-6 gap-4">
+            <h3 class="text-sm lg:text-base font-semibold text-slate-800">Target vs Realisasi Trend</h3>
+            <div class="bg-slate-100 p-1 rounded-lg flex inline-block shadow-sm">
+                <button @click="mainTrendView = 'monthly'" :class="{'bg-white text-blue-600 shadow-sm': mainTrendView === 'monthly', 'text-slate-500 hover:text-slate-700': mainTrendView !== 'monthly'}" class="px-4 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Berdasarkan Bulan</button>
+                <button @click="mainTrendView = 'yearly'" :class="{'bg-white text-blue-600 shadow-sm': mainTrendView === 'yearly', 'text-slate-500 hover:text-slate-700': mainTrendView !== 'yearly'}" class="px-4 py-1.5 text-xs font-medium rounded-md transition-all duration-200">Berdasarkan Tahun</button>
+            </div>
         </div>
-        <div class="h-[250px] lg:h-[300px] w-full">
+        
+        <div x-show="mainTrendView === 'monthly'" x-transition class="h-[250px] lg:h-[300px] w-full">
             <canvas id="monthlyChart"></canvas>
+        </div>
+        
+        <div x-show="mainTrendView === 'yearly'" x-transition style="display: none;" class="h-[250px] lg:h-[300px] w-full">
+            <canvas id="yearlyChart"></canvas>
         </div>
     </div>
 
@@ -482,23 +491,43 @@
 
         // 1. Team Chart (Bar)
         const teamCtx = document.getElementById('teamChart').getContext('2d');
-        const teamData = @json($data['achievement_per_team']);
+        const teamDataRaw = @json($data['achievement_per_team']);
+        
+        const teamMaxLimit = 30000000000; // 30 Milyar
+        const teamVisualMax = 35000000000; // 35 Milyar (sama dengan 1 grid step 5 Milyar)
+        const teamTrueMax = Math.max(...teamDataRaw.map(d => Math.max(d.target || 0, d.realization || 0)));
+        const teamHasOutlier = teamTrueMax > teamMaxLimit;
+
+        const teamMappedTarget = teamDataRaw.map(d => {
+            if (teamHasOutlier && d.target > teamMaxLimit) {
+                return teamMaxLimit + ((d.target - teamMaxLimit) / (teamTrueMax - teamMaxLimit)) * (teamVisualMax - teamMaxLimit);
+            }
+            return d.target;
+        });
+        
+        const teamMappedRealization = teamDataRaw.map(d => {
+            if (teamHasOutlier && d.realization > teamMaxLimit) {
+                return teamMaxLimit + ((d.realization - teamMaxLimit) / (teamTrueMax - teamMaxLimit)) * (teamVisualMax - teamMaxLimit);
+            }
+            return d.realization;
+        });
+
         new Chart(teamCtx, {
             type: 'bar',
             data: {
-                labels: teamData.map(d => d.team),
+                labels: teamDataRaw.map(d => d.team),
                 datasets: [
                     {
                         label: 'Target',
-                        data: teamData.map(d => d.target),
+                        data: teamMappedTarget,
                         backgroundColor: '#e2e8f0', // slate-200
                         borderRadius: 6,
                         barThickness: 16
                     },
                     {
                         label: 'Realisasi',
-                        data: teamData.map(d => d.realization),
-                        backgroundColor: teamData.map((_, i) => brightColors[i % brightColors.length]), // Berwarna warni
+                        data: teamMappedRealization,
+                        backgroundColor: teamDataRaw.map((_, i) => brightColors[i % brightColors.length]), // Berwarna warni
                         borderRadius: 6, // Bar melengkung
                         barThickness: 16
                     }
@@ -506,8 +535,38 @@
             },
             options: {
                 ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    tooltip: {
+                        ...commonOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function(context) {
+                                const datasetLabel = context.dataset.label || '';
+                                const trueValue = context.dataset.label === 'Target' ? teamDataRaw[context.dataIndex].target : teamDataRaw[context.dataIndex].realization;
+                                return datasetLabel + ': Rp ' + new Intl.NumberFormat('id-ID').format(trueValue || 0);
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: {drawBorder: false} },
+                    y: { 
+                        beginAtZero: true, 
+                        grid: {drawBorder: false},
+                        max: teamHasOutlier ? teamVisualMax : undefined,
+                        afterBuildTicks: function(axis) {
+                            if (teamHasOutlier) {
+                                axis.ticks = axis.ticks.filter(tick => tick.value <= teamMaxLimit || tick.value === teamVisualMax);
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if (teamHasOutlier && value > teamMaxLimit) {
+                                    return new Intl.NumberFormat('en-US').format(Math.round(teamTrueMax));
+                                }
+                                return new Intl.NumberFormat('en-US').format(value);
+                            }
+                        }
+                    },
                     x: { grid: {display: false} }
                 }
             }
@@ -547,52 +606,107 @@
             }
         });
 
-        // 3. Monthly Chart (Bar/Line)
-        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-        const monthlyData = @json($data['monthly_trend']);
-        new Chart(monthlyCtx, {
-            type: 'bar',
-            data: {
-                labels: monthlyData.map(d => `Bulan ${d.month}`),
-                datasets: [
-                    {
-                        type: 'line',
-                        label: 'Target',
-                        data: monthlyData.map(d => d.target),
-                        borderColor: '#94a3b8',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        pointRadius: 4,
-                        pointBackgroundColor: '#ffffff',
-                        tension: 0.3
-                    },
-                    {
-                        type: 'bar',
-                        label: 'Realisasi',
-                        data: monthlyData.map(d => d.realization),
-                        backgroundColor: '#3b82f6', // blue-500
-                        borderRadius: 4,
-                        barPercentage: 0.5
-                    }
-                ]
-            },
-            options: {
-                ...commonOptions,
-                plugins: {
-                    ...commonOptions.plugins,
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        align: 'end',
-                        labels: { usePointStyle: true, boxWidth: 8 }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true },
-                    x: { grid: {display: false} }
+        // 3. Overall Trend Chart (Bar/Line)
+        function createMainChart(ctx, dataRaw, isMonthly) {
+            const maxLimit = 30000000000; // 30 Milyar
+            const visualMax = 35000000000; // 35 Milyar (sama dengan 1 grid step)
+            const trueMax = Math.max(...dataRaw.map(d => Math.max(d.target || 0, d.realization || 0)));
+            const hasOutlier = trueMax > maxLimit;
+
+            const mappedTarget = dataRaw.map(d => {
+                if (hasOutlier && d.target > maxLimit) {
+                    return maxLimit + ((d.target - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
                 }
-            }
-        });
+                return d.target;
+            });
+            
+            const mappedRealization = dataRaw.map(d => {
+                if (hasOutlier && d.realization > maxLimit) {
+                    return maxLimit + ((d.realization - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
+                }
+                return d.realization;
+            });
+
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: isMonthly ? dataRaw.map(d => monthNames[d.month - 1] || `Bulan ${d.month}`) : dataRaw.map(d => d.year),
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Target',
+                            data: mappedTarget,
+                            borderColor: '#94a3b8',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ffffff',
+                            tension: 0.3
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Realisasi',
+                            data: mappedRealization,
+                            backgroundColor: '#3b82f6', // blue-500
+                            borderRadius: 4,
+                            barPercentage: 0.5
+                        }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: { usePointStyle: true, boxWidth: 8 }
+                        },
+                        tooltip: {
+                            ...commonOptions.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    const datasetLabel = context.dataset.label || '';
+                                    const trueValue = context.dataset.label === 'Target' ? dataRaw[context.dataIndex].target : dataRaw[context.dataIndex].realization;
+                                    return datasetLabel + ': Rp ' + new Intl.NumberFormat('id-ID').format(trueValue || 0);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            max: hasOutlier ? visualMax : undefined,
+                            afterBuildTicks: function(axis) {
+                                if (hasOutlier) {
+                                    axis.ticks = axis.ticks.filter(tick => tick.value <= maxLimit || tick.value === visualMax);
+                                }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (hasOutlier && value > maxLimit) {
+                                        return new Intl.NumberFormat('en-US').format(Math.round(trueMax));
+                                    }
+                                    return new Intl.NumberFormat('en-US').format(value);
+                                }
+                            }
+                        },
+                        x: { grid: {display: false} }
+                    }
+                }
+            });
+        }
+
+        const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        const monthlyDataRaw = @json($data['monthly_trend']);
+        createMainChart(monthlyCtx, monthlyDataRaw, true);
+
+        const yearlyCtx = document.getElementById('yearlyChart').getContext('2d');
+        const yearlyDataRaw = @json($data['yearly_trend']);
+        createMainChart(yearlyCtx, yearlyDataRaw, false);
 
         // 4. Entity Line Charts (Monthly)
         const entityTrendsMonthly = @json($data['entity_trends_monthly']);
@@ -600,6 +714,26 @@
             const el = document.getElementById(`entityLineChart_monthly_${index}`);
             if (el) {
                 const ctx = el.getContext('2d');
+                
+                const maxLimit = 10000000000; // 10 Milyar
+                const visualMax = 12000000000; // 12 Milyar
+                const trueMax = Math.max(...trend.data.map(d => Math.max(d.target || 0, d.realization || 0)));
+                const hasOutlier = trueMax > maxLimit;
+                
+                const mappedTarget = trend.data.map(d => {
+                    if (hasOutlier && d.target > maxLimit) {
+                        return maxLimit + ((d.target - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
+                    }
+                    return d.target;
+                });
+                
+                const mappedRealization = trend.data.map(d => {
+                    if (hasOutlier && d.realization > maxLimit) {
+                        return maxLimit + ((d.realization - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
+                    }
+                    return d.realization;
+                });
+
                 new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -607,7 +741,7 @@
                         datasets: [
                             {
                                 label: 'Target',
-                                data: trend.data.map(d => d.target),
+                                data: mappedTarget,
                                 borderColor: '#cbd5e1', 
                                 borderDash: [5, 5],
                                 borderWidth: 2,
@@ -616,7 +750,7 @@
                             },
                             {
                                 label: 'Realisasi',
-                                data: trend.data.map(d => d.realization),
+                                data: mappedRealization,
                                 borderColor: brightColors[index % brightColors.length], 
                                 backgroundColor: 'transparent',
                                 borderWidth: 2,
@@ -631,10 +765,35 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: { display: false },
-                            tooltip: commonOptions.plugins.tooltip
+                            tooltip: {
+                                ...commonOptions.plugins.tooltip,
+                                callbacks: {
+                                    label: function(context) {
+                                        const datasetLabel = context.dataset.label || '';
+                                        const trueValue = context.dataset.label === 'Target' ? trend.data[context.dataIndex].target : trend.data[context.dataIndex].realization;
+                                        return datasetLabel + ': Rp ' + new Intl.NumberFormat('id-ID').format(trueValue || 0);
+                                    }
+                                }
+                            }
                         },
                         scales: {
-                            y: { display: true, beginAtZero: true, border: {display: false}, grid: {color: '#f8fafc'}, ticks: {font: {size: 10}} },
+                            y: { 
+                                display: true, 
+                                beginAtZero: true, 
+                                max: hasOutlier ? visualMax : undefined,
+                                border: {display: false}, 
+                                grid: {color: '#f8fafc'}, 
+                                ticks: {
+                                    font: {size: 10},
+                                    callback: function(value) {
+                                        if (hasOutlier && value > maxLimit) {
+                                            const trueVal = maxLimit + ((value - maxLimit) / (visualMax - maxLimit)) * (trueMax - maxLimit);
+                                            return new Intl.NumberFormat('en-US').format(trueVal);
+                                        }
+                                        return new Intl.NumberFormat('en-US').format(value);
+                                    }
+                                } 
+                            },
                             x: { grid: {display: false}, ticks: {font: {size: 10}} }
                         }
                     }
@@ -648,6 +807,26 @@
             const el = document.getElementById(`entityLineChart_yearly_${index}`);
             if (el) {
                 const ctx = el.getContext('2d');
+
+                const maxLimit = 10000000000; // 10 Milyar
+                const visualMax = 12000000000; // 12 Milyar
+                const trueMax = Math.max(...trend.data.map(d => Math.max(d.target || 0, d.realization || 0)));
+                const hasOutlier = trueMax > maxLimit;
+                
+                const mappedTarget = trend.data.map(d => {
+                    if (hasOutlier && d.target > maxLimit) {
+                        return maxLimit + ((d.target - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
+                    }
+                    return d.target;
+                });
+                
+                const mappedRealization = trend.data.map(d => {
+                    if (hasOutlier && d.realization > maxLimit) {
+                        return maxLimit + ((d.realization - maxLimit) / (trueMax - maxLimit)) * (visualMax - maxLimit);
+                    }
+                    return d.realization;
+                });
+
                 new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -655,7 +834,7 @@
                         datasets: [
                             {
                                 label: 'Target',
-                                data: trend.data.map(d => d.target),
+                                data: mappedTarget,
                                 borderColor: '#cbd5e1', 
                                 borderDash: [5, 5],
                                 borderWidth: 2,
@@ -664,7 +843,7 @@
                             },
                             {
                                 label: 'Realisasi',
-                                data: trend.data.map(d => d.realization),
+                                data: mappedRealization,
                                 borderColor: brightColors[index % brightColors.length], 
                                 backgroundColor: 'transparent',
                                 borderWidth: 2,
@@ -679,10 +858,35 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: { display: false },
-                            tooltip: commonOptions.plugins.tooltip
+                            tooltip: {
+                                ...commonOptions.plugins.tooltip,
+                                callbacks: {
+                                    label: function(context) {
+                                        const datasetLabel = context.dataset.label || '';
+                                        const trueValue = context.dataset.label === 'Target' ? trend.data[context.dataIndex].target : trend.data[context.dataIndex].realization;
+                                        return datasetLabel + ': Rp ' + new Intl.NumberFormat('id-ID').format(trueValue || 0);
+                                    }
+                                }
+                            }
                         },
                         scales: {
-                            y: { display: true, beginAtZero: true, border: {display: false}, grid: {color: '#f8fafc'}, ticks: {font: {size: 10}} },
+                            y: { 
+                                display: true, 
+                                beginAtZero: true, 
+                                max: hasOutlier ? visualMax : undefined,
+                                border: {display: false}, 
+                                grid: {color: '#f8fafc'}, 
+                                ticks: {
+                                    font: {size: 10},
+                                    callback: function(value) {
+                                        if (hasOutlier && value > maxLimit) {
+                                            const trueVal = maxLimit + ((value - maxLimit) / (visualMax - maxLimit)) * (trueMax - maxLimit);
+                                            return new Intl.NumberFormat('en-US').format(trueVal);
+                                        }
+                                        return new Intl.NumberFormat('en-US').format(value);
+                                    }
+                                } 
+                            },
                             x: { grid: {display: false}, ticks: {font: {size: 10}} }
                         }
                     }

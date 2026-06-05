@@ -8,9 +8,21 @@ use App\Models\Entity;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Illuminate\Validation\Rule;
 
-class SalesTargetImport implements ToModel, WithHeadingRow, WithValidation
+class SalesTargetImport implements WithMultipleSheets
+{
+    public function sheets(): array
+    {
+        return [
+            'Data' => new SalesTargetDataImport(),
+        ];
+    }
+}
+
+class SalesTargetDataImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
     public function prepareForValidation($data, $index)
     {

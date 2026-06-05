@@ -23,11 +23,12 @@ class StoreSalesTargetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'year' => 'required|integer|min:2000',
-            'month' => 'required|integer|min:1|max:12',
-            'sales_member_name' => 'required|string|max:255',
-            'entity_name' => 'required|string|max:255',
-            'target_amount' => 'required|numeric|min:0',
+            'targets' => 'required|array|min:1',
+            'targets.*.year' => 'required|integer|min:2000',
+            'targets.*.month' => 'required|integer|min:1|max:12',
+            'targets.*.sales_member_name' => 'required|string|max:255',
+            'targets.*.entity_name' => 'required|string|max:255',
+            'targets.*.target_amount' => 'required|numeric|min:0',
         ];
     }
 }

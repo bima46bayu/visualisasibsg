@@ -53,6 +53,7 @@ class DashboardService
             'top_sales' => $this->getTopSalesMembers($filters),
             'entity_trends_monthly' => $this->getEntityMonthlyTrends($filters),
             'entity_trends_yearly' => $this->getEntityYearlyTrends($filters),
+            'yearly_trend' => $this->getYearlyData($filters),
             'pivot_table' => $this->getPivotTableData($filters),
             'filter_meta' => [
                 'year' => $year,
@@ -281,6 +282,33 @@ class DashboardService
                 'month' => $i,
                 'target' => $targets[$i] ?? 0,
                 'realization' => $realizations[$i] ?? 0,
+            ];
+        }
+
+        return $data;
+    }
+
+    private function getYearlyData(array $filters)
+    {
+        $baseYear = $filters['year'] ?? date('Y');
+        $years = range($baseYear - 2, $baseYear + 2);
+        
+        $targets = SalesTarget::whereIn('year', $years)
+            ->selectRaw('year, sum(target_amount) as total')
+            ->groupBy('year')
+            ->pluck('total', 'year')->toArray();
+            
+        $realizations = SalesRealization::whereIn('year', $years)
+            ->selectRaw('year, sum(realization_amount) as total')
+            ->groupBy('year')
+            ->pluck('total', 'year')->toArray();
+
+        $data = [];
+        foreach ($years as $y) {
+            $data[] = [
+                'year' => $y,
+                'target' => $targets[$y] ?? 0,
+                'realization' => $realizations[$y] ?? 0,
             ];
         }
 

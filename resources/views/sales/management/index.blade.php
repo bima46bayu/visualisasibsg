@@ -11,11 +11,37 @@
     editTargetData: {},
     openEditTarget(data) { this.editTargetData = data; this.isEditTargetOpen = true; },
     
+    targetDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', target_amount: '' } ],
+    activeTargetIndex: 0,
+    addEmptyTargetDraft() {
+        this.targetDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', target_amount: '' });
+        this.activeTargetIndex = this.targetDrafts.length - 1;
+    },
+    removeTargetDraft(index) {
+        if(this.targetDrafts.length > 1) {
+            this.targetDrafts.splice(index, 1);
+            if(this.activeTargetIndex >= this.targetDrafts.length) this.activeTargetIndex = this.targetDrafts.length - 1;
+        }
+    },
+
     // Realisasi
     isAddRealisasiOpen: false,
     isEditRealisasiOpen: false,
     editRealisasiData: {},
-    openEditRealisasi(data) { this.editRealisasiData = data; this.isEditRealisasiOpen = true; }
+    openEditRealisasi(data) { this.editRealisasiData = data; this.isEditRealisasiOpen = true; },
+
+    realisasiDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', realization_amount: '' } ],
+    activeRealisasiIndex: 0,
+    addEmptyRealisasiDraft() {
+        this.realisasiDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', realization_amount: '' });
+        this.activeRealisasiIndex = this.realisasiDrafts.length - 1;
+    },
+    removeRealisasiDraft(index) {
+        if(this.realisasiDrafts.length > 1) {
+            this.realisasiDrafts.splice(index, 1);
+            if(this.activeRealisasiIndex >= this.realisasiDrafts.length) this.activeRealisasiIndex = this.realisasiDrafts.length - 1;
+        }
+    }
 }">
 
     <!-- Header & Master Data Shortcuts -->
@@ -220,39 +246,67 @@
             <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Target Sales</h3>
             <form action="{{ route('sales-targets.store') }}" method="POST">
                 @csrf
+                <template x-for="(draft, index) in targetDrafts" :key="index">
+                    <div>
+                        <input type="hidden" :name="`targets[${index}][year]`" :value="draft.year">
+                        <input type="hidden" :name="`targets[${index}][month]`" :value="draft.month">
+                        <input type="hidden" :name="`targets[${index}][sales_member_name]`" :value="draft.sales_member_name">
+                        <input type="hidden" :name="`targets[${index}][entity_name]`" :value="draft.entity_name">
+                        <input type="hidden" :name="`targets[${index}][target_amount]`" :value="draft.target_amount">
+                    </div>
+                </template>
+
+                <div class="flex items-center justify-between mb-4 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <button type="button" @click="if(activeTargetIndex > 0) activeTargetIndex--" class="p-1.5 rounded-md hover:bg-slate-200 text-slate-600 disabled:opacity-50" :disabled="activeTargetIndex === 0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <div class="text-xs font-semibold text-slate-600">
+                        Draft ke-<span x-text="activeTargetIndex + 1"></span> dari <span x-text="targetDrafts.length"></span>
+                    </div>
+                    <button type="button" @click="if(activeTargetIndex < targetDrafts.length - 1) activeTargetIndex++" class="p-1.5 rounded-md hover:bg-slate-200 text-slate-600 disabled:opacity-50" :disabled="activeTargetIndex === targetDrafts.length - 1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <select name="year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
+                        <select x-model="targetDrafts[activeTargetIndex].year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
                             @for($y = date('Y') - 2; $y <= date('Y') + 2; $y++)
-                                <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                <option value="{{ $y }}">{{ $y }}</option>
                             @endfor
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                        <select name="month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
+                        <select x-model="targetDrafts[activeTargetIndex].month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
                             @for($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
+                                <option value="{{ $m }}">{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
                             @endfor
                         </select>
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
-                    <input type="text" name="sales_member_name" list="am-list" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
+                    <input type="text" list="entity-list" x-model="targetDrafts[activeTargetIndex].entity_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
-                    <input type="text" name="entity_name" list="entity-list" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
+                    <input type="text" list="am-list" x-model="targetDrafts[activeTargetIndex].sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Target Amount (Rp)</label>
-                    <input type="number" name="target_amount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                    <input type="number" x-model="targetDrafts[activeTargetIndex].target_amount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" @click="isAddTargetOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
-                    <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan</button>
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <button type="button" @click="addEmptyTargetDraft()" class="w-10 h-10 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 font-bold text-xl border border-blue-200 transition" title="Tambah Draft Lain">+</button>
+                        <button type="button" x-show="targetDrafts.length > 1" @click="removeTargetDraft(activeTargetIndex)" class="h-10 px-3 flex items-center justify-center text-red-600 bg-red-50 rounded-lg hover:bg-red-100 font-semibold text-sm border border-red-200 transition" title="Hapus Draft Ini" style="display: none;">Hapus</button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" @click="isAddTargetOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
+                        <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan Semua</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -283,12 +337,12 @@
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
-                    <input type="text" name="sales_member_name" list="am-list" x-model="editTargetData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
-                </div>
-                <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
                     <input type="text" name="entity_name" list="entity-list" x-model="editTargetData.entity_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
+                    <input type="text" name="sales_member_name" list="am-list" x-model="editTargetData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Target Amount (Rp)</label>
@@ -310,39 +364,67 @@
             <h3 class="text-lg font-bold text-slate-800 mb-4">Tambah Realisasi Sales</h3>
             <form action="{{ route('sales-realizations.store') }}" method="POST">
                 @csrf
+                <template x-for="(draft, index) in realisasiDrafts" :key="index">
+                    <div>
+                        <input type="hidden" :name="`realizations[${index}][year]`" :value="draft.year">
+                        <input type="hidden" :name="`realizations[${index}][month]`" :value="draft.month">
+                        <input type="hidden" :name="`realizations[${index}][sales_member_name]`" :value="draft.sales_member_name">
+                        <input type="hidden" :name="`realizations[${index}][entity_name]`" :value="draft.entity_name">
+                        <input type="hidden" :name="`realizations[${index}][realization_amount]`" :value="draft.realization_amount">
+                    </div>
+                </template>
+
+                <div class="flex items-center justify-between mb-4 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <button type="button" @click="if(activeRealisasiIndex > 0) activeRealisasiIndex--" class="p-1.5 rounded-md hover:bg-slate-200 text-slate-600 disabled:opacity-50" :disabled="activeRealisasiIndex === 0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <div class="text-xs font-semibold text-slate-600">
+                        Draft ke-<span x-text="activeRealisasiIndex + 1"></span> dari <span x-text="realisasiDrafts.length"></span>
+                    </div>
+                    <button type="button" @click="if(activeRealisasiIndex < realisasiDrafts.length - 1) activeRealisasiIndex++" class="p-1.5 rounded-md hover:bg-slate-200 text-slate-600 disabled:opacity-50" :disabled="activeRealisasiIndex === realisasiDrafts.length - 1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
-                        <select name="year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
+                        <select x-model="realisasiDrafts[activeRealisasiIndex].year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
                             @for($y = date('Y') - 2; $y <= date('Y') + 2; $y++)
-                                <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                <option value="{{ $y }}">{{ $y }}</option>
                             @endfor
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
-                        <select name="month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
+                        <select x-model="realisasiDrafts[activeRealisasiIndex].month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition bg-white" required>
                             @for($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
+                                <option value="{{ $m }}">{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
                             @endfor
                         </select>
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
-                    <input type="text" name="sales_member_name" list="am-list" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
+                    <input type="text" list="entity-list" x-model="realisasiDrafts[activeRealisasiIndex].entity_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
-                    <input type="text" name="entity_name" list="entity-list" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
+                    <input type="text" list="am-list" x-model="realisasiDrafts[activeRealisasiIndex].sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Realisasi Amount (Rp)</label>
-                    <input type="number" name="realization_amount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                    <input type="number" x-model="realisasiDrafts[activeRealisasiIndex].realization_amount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" @click="isAddRealisasiOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
-                    <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan</button>
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-2">
+                        <button type="button" @click="addEmptyRealisasiDraft()" class="w-10 h-10 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 font-bold text-xl border border-blue-200 transition" title="Tambah Draft Lain">+</button>
+                        <button type="button" x-show="realisasiDrafts.length > 1" @click="removeRealisasiDraft(activeRealisasiIndex)" class="h-10 px-3 flex items-center justify-center text-red-600 bg-red-50 rounded-lg hover:bg-red-100 font-semibold text-sm border border-red-200 transition" title="Hapus Draft Ini" style="display: none;">Hapus</button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" @click="isAddRealisasiOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
+                        <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan Semua</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -373,12 +455,12 @@
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
-                    <input type="text" name="sales_member_name" list="am-list" x-model="editRealisasiData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
-                </div>
-                <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Entity</label>
                     <input type="text" name="entity_name" list="entity-list" x-model="editRealisasiData.entity_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
+                    <input type="text" name="sales_member_name" list="am-list" x-model="editRealisasiData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Realisasi Amount (Rp)</label>
@@ -391,8 +473,6 @@
             </form>
         </div>
     </div>
-
-
 </div>
 
 <!-- Import Modals -->
