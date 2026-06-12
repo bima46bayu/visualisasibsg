@@ -6,6 +6,7 @@ use App\Models\SalesTarget;
 use App\Models\SalesRealization;
 use App\Models\SalesMember;
 use App\Models\Entity;
+use App\Models\EndUser;
 use Illuminate\Http\Request;
 
 class SalesManagementController extends Controller
@@ -34,7 +35,8 @@ class SalesManagementController extends Controller
 
         $sales_members = SalesMember::all();
         $entities = Entity::all();
+        $end_users = EndUser::all();
 
-        return view('sales.management.index', compact('sales_targets', 'sales_realizations', 'sales_members', 'entities'));
+        return view('sales.management.index', compact('sales_targets', 'sales_realizations', 'sales_members', 'entities', 'end_users'));
     }
 }

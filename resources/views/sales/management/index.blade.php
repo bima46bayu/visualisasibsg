@@ -11,10 +11,10 @@
     editTargetData: {},
     openEditTarget(data) { this.editTargetData = data; this.isEditTargetOpen = true; },
     
-    targetDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', target_amount: '' } ],
+    targetDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', end_user_name: '', target_amount: '' } ],
     activeTargetIndex: 0,
     addEmptyTargetDraft() {
-        this.targetDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', target_amount: '' });
+        this.targetDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', end_user_name: '', target_amount: '' });
         this.activeTargetIndex = this.targetDrafts.length - 1;
     },
     removeTargetDraft(index) {
@@ -30,10 +30,10 @@
     editRealisasiData: {},
     openEditRealisasi(data) { this.editRealisasiData = data; this.isEditRealisasiOpen = true; },
 
-    realisasiDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', realization_amount: '' } ],
+    realisasiDrafts: [ { year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', end_user_name: '', realization_amount: '' } ],
     activeRealisasiIndex: 0,
     addEmptyRealisasiDraft() {
-        this.realisasiDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', realization_amount: '' });
+        this.realisasiDrafts.push({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sales_member_name: '', entity_name: '', end_user_name: '', realization_amount: '' });
         this.activeRealisasiIndex = this.realisasiDrafts.length - 1;
     },
     removeRealisasiDraft(index) {
@@ -44,10 +44,16 @@
     }
 }">
 
+    <datalist id="end-user-list">
+        @foreach($end_users as $eu)
+            <option value="{{ $eu->name }}">
+        @endforeach
+    </datalist>
+
     <!-- Header & Master Data Shortcuts -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 xl:p-6 mb-6">
         <h2 class="text-lg xl:text-xl font-bold text-slate-800 mb-4">Pusat Kelola Data</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 xl:gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
             <a href="{{ route('teams.index') }}" class="flex items-center p-3 xl:p-4 border border-blue-100 bg-gradient-to-br from-white to-blue-50 rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group">
                 <div class="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mr-3 xl:mr-4 group-hover:scale-110 transition-transform">
                     <svg class="w-5 h-5 xl:w-6 xl:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -68,13 +74,23 @@
                 </div>
             </a>
 
-            <a href="{{ route('entities.index') }}" class="flex items-center p-3 xl:p-4 border border-amber-100 bg-gradient-to-br from-white to-amber-50 rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group">
-                <div class="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mr-3 xl:mr-4 group-hover:scale-110 transition-transform">
+            <a href="{{ route('entities.index') }}" class="flex items-center p-3 xl:p-4 border border-indigo-100 bg-gradient-to-br from-white to-indigo-50 rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group">
+                <div class="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3 xl:mr-4 group-hover:scale-110 transition-transform">
                     <svg class="w-5 h-5 xl:w-6 xl:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                 </div>
                 <div>
                     <div class="font-bold text-sm xl:text-base text-slate-800">Master Entity</div>
                     <div class="text-[10px] xl:text-xs text-slate-500 line-clamp-1">Kelola entitas bisnis/produk</div>
+                </div>
+            </a>
+
+            <a href="{{ route('end-users.index') }}" class="flex items-center p-3 xl:p-4 border border-amber-100 bg-gradient-to-br from-white to-amber-50 rounded-xl hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md group">
+                <div class="w-10 h-10 xl:w-12 xl:h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mr-3 xl:mr-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-5 h-5 xl:w-6 xl:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <div>
+                    <div class="font-bold text-sm xl:text-base text-slate-800">Master End User</div>
+                    <div class="text-[10px] xl:text-xs text-slate-500 line-clamp-1">Kelola data klien/project</div>
                 </div>
             </a>
         </div>
@@ -132,6 +148,7 @@
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Periode</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Sales Member</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Entity</th>
+                                <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">End User</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Target Amount</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs text-center">Action</th>
                             </tr>
@@ -142,9 +159,10 @@
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs">{{ $target->month }}/{{ $target->year }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs font-medium text-slate-800">{{ $target->salesMember->name ?? '-' }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs">{{ $target->entity->name ?? '-' }}</td>
+                                <td class="px-4 py-2.5 whitespace-nowrap text-xs font-semibold text-slate-700">{{ $target->endUser->name ?? '-' }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs text-emerald-600 font-semibold">Rp {{ number_format($target->target_amount, 0, ',', '.') }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs text-center">
-                                    <button @click="openEditTarget({ id: {{ $target->id }}, year: {{ $target->year }}, month: {{ $target->month }}, sales_member_name: '{{ $target->salesMember->name ?? '' }}', entity_name: '{{ $target->entity->name ?? '' }}', target_amount: {{ $target->target_amount }} })" class="text-blue-600 hover:text-blue-900 mx-1">Edit</button>
+                                    <button @click="openEditTarget({ id: {{ $target->id }}, year: {{ $target->year }}, month: {{ $target->month }}, sales_member_name: '{{ addslashes($target->salesMember->name ?? '') }}', entity_name: '{{ addslashes($target->entity->name ?? '') }}', end_user_name: '{{ addslashes($target->endUser->name ?? '') }}', target_amount: {{ $target->target_amount }} })" class="text-blue-600 hover:text-blue-900 mx-1">Edit</button>
                                     <form id="delete-target-{{ $target->id }}" action="{{ route('sales-targets.destroy', $target->id) }}" method="POST" class="inline-block">
                                         @csrf @method('DELETE')
                                         <button type="button" onclick="confirmDelete('delete-target-{{ $target->id }}', 'Yakin hapus target ini?')" class="text-red-600 hover:text-red-900 mx-1">Hapus</button>
@@ -153,7 +171,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-2.5 whitespace-nowrap text-xs text-center text-gray-500">Belum ada data target.</td>
+                                <td colspan="6" class="px-4 py-2.5 whitespace-nowrap text-xs text-center text-gray-500">Belum ada data target.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -204,6 +222,7 @@
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Periode</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Sales Member</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Entity</th>
+                                <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">End User</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs">Realisasi Amount</th>
                                 <th class="px-4 py-3 font-bold whitespace-nowrap text-xs text-center">Action</th>
                             </tr>
@@ -214,9 +233,10 @@
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs">{{ $realization->month }}/{{ $realization->year }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs font-medium text-slate-800">{{ $realization->salesMember->name ?? '-' }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs">{{ $realization->entity->name ?? '-' }}</td>
+                                <td class="px-4 py-2.5 whitespace-nowrap text-xs font-semibold text-slate-700">{{ $realization->endUser->name ?? '-' }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs text-emerald-600 font-semibold">Rp {{ number_format($realization->realization_amount, 0, ',', '.') }}</td>
                                 <td class="px-4 py-2.5 whitespace-nowrap text-xs text-center">
-                                    <button @click="openEditRealisasi({ id: {{ $realization->id }}, year: {{ $realization->year }}, month: {{ $realization->month }}, sales_member_name: '{{ $realization->salesMember->name ?? '' }}', entity_name: '{{ $realization->entity->name ?? '' }}', realization_amount: {{ $realization->realization_amount }} })" class="text-blue-600 hover:text-blue-900 mx-1">Edit</button>
+                                    <button @click="openEditRealisasi({ id: {{ $realization->id }}, year: {{ $realization->year }}, month: {{ $realization->month }}, sales_member_name: '{{ addslashes($realization->salesMember->name ?? '') }}', entity_name: '{{ addslashes($realization->entity->name ?? '') }}', end_user_name: '{{ addslashes($realization->endUser->name ?? '') }}', realization_amount: {{ $realization->realization_amount }} })" class="text-blue-600 hover:text-blue-900 mx-1">Edit</button>
                                     <form id="delete-realisasi-{{ $realization->id }}" action="{{ route('sales-realizations.destroy', $realization->id) }}" method="POST" class="inline-block">
                                         @csrf @method('DELETE')
                                         <button type="button" onclick="confirmDelete('delete-realisasi-{{ $realization->id }}', 'Yakin hapus realisasi ini?')" class="text-red-600 hover:text-red-900 mx-1">Hapus</button>
@@ -225,7 +245,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-2.5 whitespace-nowrap text-xs text-center text-gray-500">Belum ada data realisasi.</td>
+                                <td colspan="6" class="px-4 py-2.5 whitespace-nowrap text-xs text-center text-gray-500">Belum ada data realisasi.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -252,6 +272,7 @@
                         <input type="hidden" :name="`targets[${index}][month]`" :value="draft.month">
                         <input type="hidden" :name="`targets[${index}][sales_member_name]`" :value="draft.sales_member_name">
                         <input type="hidden" :name="`targets[${index}][entity_name]`" :value="draft.entity_name">
+                        <input type="hidden" :name="`targets[${index}][end_user_name]`" :value="draft.end_user_name">
                         <input type="hidden" :name="`targets[${index}][target_amount]`" :value="draft.target_amount">
                     </div>
                 </template>
@@ -293,6 +314,10 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
                     <input type="text" list="am-list" x-model="targetDrafts[activeTargetIndex].sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End User</label>
+                    <input type="text" list="end-user-list" x-model="targetDrafts[activeTargetIndex].end_user_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Target Amount (Rp)</label>
@@ -344,6 +369,10 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
                     <input type="text" name="sales_member_name" list="am-list" x-model="editTargetData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End User</label>
+                    <input type="text" name="end_user_name" list="end-user-list" x-model="editTargetData.end_user_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Target Amount (Rp)</label>
                     <input type="number" name="target_amount" x-model="editTargetData.target_amount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
@@ -370,6 +399,7 @@
                         <input type="hidden" :name="`realizations[${index}][month]`" :value="draft.month">
                         <input type="hidden" :name="`realizations[${index}][sales_member_name]`" :value="draft.sales_member_name">
                         <input type="hidden" :name="`realizations[${index}][entity_name]`" :value="draft.entity_name">
+                        <input type="hidden" :name="`realizations[${index}][end_user_name]`" :value="draft.end_user_name">
                         <input type="hidden" :name="`realizations[${index}][realization_amount]`" :value="draft.realization_amount">
                     </div>
                 </template>
@@ -411,6 +441,10 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
                     <input type="text" list="am-list" x-model="realisasiDrafts[activeRealisasiIndex].sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End User</label>
+                    <input type="text" list="end-user-list" x-model="realisasiDrafts[activeRealisasiIndex].end_user_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" placeholder="Pilih dari daftar atau ketik baru..." required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Realisasi Amount (Rp)</label>
@@ -461,6 +495,10 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Sales Member</label>
                     <input type="text" name="sales_member_name" list="am-list" x-model="editRealisasiData.sales_member_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">End User</label>
+                    <input type="text" name="end_user_name" list="end-user-list" x-model="editRealisasiData.end_user_name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 outline-none transition" required>
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Realisasi Amount (Rp)</label>

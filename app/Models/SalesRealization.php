@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalesRealization extends Model
 {
-    protected $fillable = ['year', 'month', 'sales_member_id', 'entity_id', 'realization_amount'];
+    protected $fillable = ['year', 'month', 'sales_member_id', 'entity_id', 'end_user_id', 'realization_amount'];
 
     public function salesMember()
     {
@@ -16,5 +16,10 @@ class SalesRealization extends Model
     public function entity()
     {
         return $this->belongsTo(Entity::class);
+    }
+
+    public function endUser()
+    {
+        return $this->belongsTo(EndUser::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SalesTarget;
 use App\Models\SalesMember;
 use App\Models\Entity;
+use App\Models\EndUser;
 use App\Http\Requests\StoreSalesTargetRequest;
 use App\Http\Requests\UpdateSalesTargetRequest;
 use Illuminate\Http\Request;
@@ -38,13 +39,15 @@ class SalesTargetController extends Controller
         foreach ($request->targets as $targetData) {
             $salesMember = SalesMember::firstOrCreate(['name' => $targetData['sales_member_name']]);
             $entity = Entity::firstOrCreate(['name' => $targetData['entity_name']]);
+            $endUser = EndUser::firstOrCreate(['name' => $targetData['end_user_name']]);
 
             SalesTarget::updateOrCreate(
                 [
                     'year' => $targetData['year'],
                     'month' => $targetData['month'],
                     'sales_member_id' => $salesMember->id,
-                    'entity_id' => $entity->id
+                    'entity_id' => $entity->id,
+                    'end_user_id' => $endUser->id
                 ],
                 ['target_amount' => $targetData['target_amount']]
             );
@@ -68,11 +71,13 @@ class SalesTargetController extends Controller
     {
         $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
         $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
 
         $existing = SalesTarget::where('year', $request->year)
             ->where('month', $request->month)
             ->where('sales_member_id', $salesMember->id)
             ->where('entity_id', $entity->id)
+            ->where('end_user_id', $endUser->id)
             ->where('id', '!=', $target->id)
             ->first();
 
@@ -85,6 +90,7 @@ class SalesTargetController extends Controller
             'month' => $request->month,
             'sales_member_id' => $salesMember->id,
             'entity_id' => $entity->id,
+            'end_user_id' => $endUser->id,
             'target_amount' => $request->target_amount
         ]);
         return redirect()->route('sales-management.index', ['tab' => 'target'])->with('success', 'Target berhasil diupdate.');

@@ -142,7 +142,7 @@
     </div>
 
     <!-- Section 2: Charts (Gabung dalam satu grid agar side-by-side) -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         
         <!-- Left (span 2): Bar Chart -->
         <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 flex flex-col justify-between">
@@ -152,11 +152,19 @@
             </div>
         </div>
 
-        <!-- Right (span 1): Donut Chart -->
+        <!-- Middle (span 1): Donut Chart Entity -->
         <div class="xl:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 flex flex-col justify-between">
             <h3 class="text-sm lg:text-base font-semibold text-slate-800 mb-4">Entity Distribution</h3>
             <div class="h-[250px] lg:h-[300px] w-full flex justify-center">
                 <canvas id="entityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Right (span 1): Donut Chart End User -->
+        <div class="xl:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 flex flex-col justify-between">
+            <h3 class="text-sm lg:text-base font-semibold text-slate-800 mb-4">Top End User Dist.</h3>
+            <div class="h-[250px] lg:h-[300px] w-full flex justify-center">
+                <canvas id="endUserChart"></canvas>
             </div>
         </div>
     </div>
@@ -412,7 +420,7 @@
             <table class="w-full text-sm text-right border-collapse whitespace-nowrap">
                 <thead>
                     <tr class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                        <th rowspan="2" class="border-r border-slate-200 px-4 py-3 text-left w-64 bg-slate-50 sticky left-0 z-10">By Entity</th>
+                        <th rowspan="2" class="border-r border-slate-200 px-4 py-3 text-left w-64 bg-slate-50 sticky left-0 z-10">By Entity / AM / End User</th>
                         <th colspan="3" class="border-r border-slate-200 px-3 py-2 text-center">{{ $prevMonthName }}</th>
                         <th colspan="3" class="border-r border-slate-200 px-3 py-2 text-center">{{ $currMonthName }}</th>
                         <th colspan="3" class="px-3 py-2 text-center">Total {{ $filterYear }}</th>
@@ -431,8 +439,8 @@
                 </thead>
                 <tbody class="text-xs">
                     @foreach($data['pivot_table']['by_entity'] as $ent)
-                    <tr class="bg-white text-slate-700 border-b border-slate-100">
-                        <td class="border-r border-slate-200 px-4 py-2 text-left sticky left-0 bg-white z-10">{{ $ent['name'] }}</td>
+                    <tr class="bg-slate-100 font-semibold text-slate-800 border-b border-slate-200">
+                        <td class="border-r border-slate-200 px-4 py-2 text-left sticky left-0 bg-slate-100 z-10">{{ $ent['name'] }}</td>
                         <td class="border-r border-slate-200 px-3 py-2">{{ number_format($ent['prev']['target']) }}</td>
                         <td class="border-r border-slate-200 px-3 py-2">{{ number_format($ent['prev']['realization']) }}</td>
                         <td class="border-r border-slate-200 px-3 py-2 text-center">{!! formatAchPlain($ent['prev']['target'], $ent['prev']['realization']) !!}</td>
@@ -443,6 +451,34 @@
                         <td class="border-r border-slate-200 px-3 py-2">{{ number_format($ent['total']['realization']) }}</td>
                         <td class="px-3 py-2 text-center">{!! formatAchPlain($ent['total']['target'], $ent['total']['realization']) !!}</td>
                     </tr>
+                        @foreach($ent['ams'] as $am)
+                        <tr class="bg-white font-medium text-slate-700 border-b border-slate-100">
+                            <td class="border-r border-slate-200 px-4 py-2 text-left pl-8 sticky left-0 bg-white z-10">{{ $am['name'] }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['prev']['target']) }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['prev']['realization']) }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2 text-center">{!! formatAchPlain($am['prev']['target'], $am['prev']['realization']) !!}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['curr']['target']) }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['curr']['realization']) }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2 text-center">{!! formatAchPlain($am['curr']['target'], $am['curr']['realization']) !!}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['total']['target']) }}</td>
+                            <td class="border-r border-slate-200 px-3 py-2">{{ number_format($am['total']['realization']) }}</td>
+                            <td class="px-3 py-2 text-center">{!! formatAchPlain($am['total']['target'], $am['total']['realization']) !!}</td>
+                        </tr>
+                            @foreach($am['end_users'] as $eu)
+                            <tr class="bg-white text-slate-500 border-b border-slate-50">
+                                <td class="border-r border-slate-200 px-4 py-2 text-left pl-12 sticky left-0 bg-white z-10">{{ $eu['name'] }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['prev']['target']) }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['prev']['realization']) }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2 text-center">{!! formatAchPlain($eu['prev']['target'], $eu['prev']['realization']) !!}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['curr']['target']) }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['curr']['realization']) }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2 text-center">{!! formatAchPlain($eu['curr']['target'], $eu['curr']['realization']) !!}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['total']['target']) }}</td>
+                                <td class="border-r border-slate-200 px-3 py-2">{{ number_format($eu['total']['realization']) }}</td>
+                                <td class="px-3 py-2 text-center">{!! formatAchPlain($eu['total']['target'], $eu['total']['realization']) !!}</td>
+                            </tr>
+                            @endforeach
+                        @endforeach
                     @endforeach
                     <tr class="bg-blue-50 font-bold text-slate-800 border-t border-slate-300">
                         <td class="border-r border-slate-300 px-4 py-3 text-left sticky left-0 bg-blue-50 z-10">Subtotal</td>
@@ -593,7 +629,41 @@
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'right',
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 16,
+                            font: { size: 11 }
+                        }
+                    },
+                    tooltip: commonOptions.plugins.tooltip
+                }
+            }
+        });
+
+        // 2.5 End User Chart (Donut)
+        const endUserCtx = document.getElementById('endUserChart').getContext('2d');
+        const endUserData = @json($data['achievement_per_end_user']);
+        new Chart(endUserCtx, {
+            type: 'doughnut',
+            data: {
+                labels: endUserData.map(d => d.end_user),
+                datasets: [{
+                    data: endUserData.map(d => d.realization),
+                    backgroundColor: [...brightColors].reverse(), // Reverse colors for variety
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
                         labels: {
                             usePointStyle: true,
                             boxWidth: 8,

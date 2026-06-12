@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SalesRealization;
 use App\Models\SalesMember;
 use App\Models\Entity;
+use App\Models\EndUser;
 use App\Http\Requests\StoreSalesRealizationRequest;
 use App\Http\Requests\UpdateSalesRealizationRequest;
 use Illuminate\Http\Request;
@@ -38,13 +39,15 @@ class SalesRealizationController extends Controller
         foreach ($request->realizations as $realizationData) {
             $salesMember = SalesMember::firstOrCreate(['name' => $realizationData['sales_member_name']]);
             $entity = Entity::firstOrCreate(['name' => $realizationData['entity_name']]);
+            $endUser = EndUser::firstOrCreate(['name' => $realizationData['end_user_name']]);
 
             SalesRealization::updateOrCreate(
                 [
                     'year' => $realizationData['year'],
                     'month' => $realizationData['month'],
                     'sales_member_id' => $salesMember->id,
-                    'entity_id' => $entity->id
+                    'entity_id' => $entity->id,
+                    'end_user_id' => $endUser->id
                 ],
                 ['realization_amount' => $realizationData['realization_amount']]
             );
@@ -68,11 +71,13 @@ class SalesRealizationController extends Controller
     {
         $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
         $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
 
         $existing = SalesRealization::where('year', $request->year)
             ->where('month', $request->month)
             ->where('sales_member_id', $salesMember->id)
             ->where('entity_id', $entity->id)
+            ->where('end_user_id', $endUser->id)
             ->where('id', '!=', $realization->id)
             ->first();
 
@@ -85,6 +90,7 @@ class SalesRealizationController extends Controller
             'month' => $request->month,
             'sales_member_id' => $salesMember->id,
             'entity_id' => $entity->id,
+            'end_user_id' => $endUser->id,
             'realization_amount' => $request->realization_amount
         ]);
         return redirect()->route('sales-management.index', ['tab' => 'realisasi'])->with('success', 'Realisasi berhasil diupdate.');

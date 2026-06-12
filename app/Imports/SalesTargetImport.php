@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\SalesTarget;
 use App\Models\SalesMember;
 use App\Models\Entity;
+use App\Models\EndUser;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -37,6 +38,7 @@ class SalesTargetDataImport implements ToModel, WithHeadingRow, WithValidation, 
     {
         $salesMember = SalesMember::where('name', $row['am'])->first();
         $entity = Entity::where('code', $row['entity'])->orWhere('name', $row['entity'])->first();
+        $endUser = EndUser::firstOrCreate(['name' => $row['end_user'] ?? 'Umum']);
 
         if (!$salesMember || !$entity) {
             return null; // Should be caught by validation, but safe check
@@ -48,6 +50,7 @@ class SalesTargetDataImport implements ToModel, WithHeadingRow, WithValidation, 
                 'month' => $row['bulan'],
                 'sales_member_id' => $salesMember->id,
                 'entity_id' => $entity->id,
+                'end_user_id' => $endUser->id,
             ],
             [
                 'target_amount' => $row['target'],
@@ -70,6 +73,7 @@ class SalesTargetDataImport implements ToModel, WithHeadingRow, WithValidation, 
                     $fail('Entity tidak ditemukan.');
                 }
             }],
+            'end_user' => 'required|string',
             'target' => 'required|numeric|min:0',
         ];
     }

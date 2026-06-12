@@ -15,10 +15,12 @@ if (!is_dir(__DIR__ . '/public/templates')) {
 
 $salesMembers = \App\Models\SalesMember::pluck('name')->toArray();
 $entities = \App\Models\Entity::pluck('name')->toArray();
+$endUsers = \App\Models\EndUser::pluck('name')->toArray();
 
 // Pastikan ada setidaknya satu data agar template tidak kosong
 if (empty($salesMembers)) $salesMembers = ['BREE COFFEE & KITCHEN', 'Contoh Sales 2'];
 if (empty($entities)) $entities = ['BAHANA', 'Contoh Entity 2'];
+if (empty($endUsers)) $endUsers = ['Umum', 'Contoh End User 2'];
 
 function addValidation($sheet, $col, $dataRange) {
     // Terapkan ke baris 2 sampai 1000
@@ -38,7 +40,7 @@ function addValidation($sheet, $col, $dataRange) {
     }
 }
 
-function createTemplate($filename, $valCol, $salesMembers, $entities) {
+function createTemplate($filename, $valCol, $salesMembers, $entities, $endUsers) {
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
     $sheet->setTitle('Data');
@@ -48,7 +50,8 @@ function createTemplate($filename, $valCol, $salesMembers, $entities) {
     $sheet->setCellValue('B1', 'bulan');
     $sheet->setCellValue('C1', 'am');
     $sheet->setCellValue('D1', 'entity');
-    $sheet->setCellValue('E1', $valCol);
+    $sheet->setCellValue('E1', 'end_user');
+    $sheet->setCellValue('F1', $valCol);
 
     $months_names = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -57,7 +60,8 @@ function createTemplate($filename, $valCol, $salesMembers, $entities) {
     $sheet->setCellValue('B2', $months_names[date('n') - 1]);
     $sheet->setCellValue('C2', $salesMembers[0]);
     $sheet->setCellValue('D2', $entities[0]);
-    $sheet->setCellValue('E2', $valCol == 'target' ? '10000000' : '8000000');
+    $sheet->setCellValue('E2', $endUsers[0]);
+    $sheet->setCellValue('F2', $valCol == 'target' ? '10000000' : '8000000');
 
     // Create a hidden sheet for lists
     $listSheet = $spreadsheet->createSheet();
@@ -74,21 +78,24 @@ function createTemplate($filename, $valCol, $salesMembers, $entities) {
     foreach ($months as $index => $month) { $listSheet->setCellValue('B' . ($index + 1), $month); }
     foreach ($salesMembers as $index => $sm) { $listSheet->setCellValue('C' . ($index + 1), $sm); }
     foreach ($entities as $index => $ent) { $listSheet->setCellValue('D' . ($index + 1), $ent); }
+    foreach ($endUsers as $index => $eu) { $listSheet->setCellValue('E' . ($index + 1), $eu); }
     
     // Create Named Ranges for dropdowns (using absolute references for the ranges)
     $spreadsheet->addNamedRange(new NamedRange('YearList', $listSheet, 'Lists!$A$1:$A$' . count($years)));
     $spreadsheet->addNamedRange(new NamedRange('MonthList', $listSheet, 'Lists!$B$1:$B$' . count($months)));
     $spreadsheet->addNamedRange(new NamedRange('AmList', $listSheet, 'Lists!$C$1:$C$' . count($salesMembers)));
     $spreadsheet->addNamedRange(new NamedRange('EntityList', $listSheet, 'Lists!$D$1:$D$' . count($entities)));
+    $spreadsheet->addNamedRange(new NamedRange('EndUserList', $listSheet, 'Lists!$E$1:$E$' . count($endUsers)));
 
-    // Apply data validation to columns A, B, C, D
+    // Apply data validation to columns A, B, C, D, E
     addValidation($sheet, 'A', '=YearList');
     addValidation($sheet, 'B', '=MonthList');
     addValidation($sheet, 'C', '=AmList');
     addValidation($sheet, 'D', '=EntityList');
+    addValidation($sheet, 'E', '=EndUserList');
 
     // Auto-size columns
-    foreach (range('A','E') as $col) {
+    foreach (range('A','F') as $col) {
         $sheet->getColumnDimension($col)->setAutoSize(true);
     }
     
@@ -99,7 +106,7 @@ function createTemplate($filename, $valCol, $salesMembers, $entities) {
     $writer->save(__DIR__ . '/public/templates/' . $filename);
 }
 
-createTemplate('template_target.xlsx', 'target', $salesMembers, $entities);
-createTemplate('template_realisasi.xlsx', 'realisasi', $salesMembers, $entities);
+createTemplate('template_target.xlsx', 'target', $salesMembers, $entities, $endUsers);
+createTemplate('template_realisasi.xlsx', 'realisasi', $salesMembers, $entities, $endUsers);
 
 echo "Templates generated successfully.\n";

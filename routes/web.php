@@ -8,6 +8,7 @@ use App\Http\Controllers\SalesMemberController;
 use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SalesRealizationController;
 use App\Http\Controllers\SalesManagementController;
+use App\Http\Controllers\EndUserController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -19,6 +20,7 @@ Route::prefix('master')->group(function () {
     Route::resource('teams', TeamController::class);
     Route::resource('entities', EntityController::class);
     Route::resource('sales-members', SalesMemberController::class);
+    Route::resource('end-users', EndUserController::class);
 });
 
 Route::get('/sales-management', [SalesManagementController::class, 'index'])->name('sales-management.index');

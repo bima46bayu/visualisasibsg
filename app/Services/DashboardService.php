@@ -7,6 +7,7 @@ use App\Models\SalesRealization;
 use App\Models\Team;
 use App\Models\Entity;
 use App\Models\SalesMember;
+use App\Models\EndUser;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -49,6 +50,7 @@ class DashboardService
             'overall_achievement_percentage' => $achievementPercent,
             'achievement_per_team' => $this->getTeamAchievement($filters),
             'achievement_per_entity' => $this->getEntityAchievement($filters),
+            'achievement_per_end_user' => $this->getEndUserAchievement($filters),
             'monthly_trend' => $this->getMonthlyData($filters),
             'top_sales' => $this->getTopSalesMembers($filters),
             'entity_trends_monthly' => $this->getEntityMonthlyTrends($filters),
@@ -152,6 +154,7 @@ class DashboardService
         $teams = Team::all()->keyBy('id');
         $entities = Entity::all()->keyBy('id');
         $salesMembers = SalesMember::all();
+        $endUsers = EndUser::all()->keyBy('id');
 
         $targets = SalesTarget::where('year', $year)->get();
         $realizations = SalesRealization::where('year', $year)->get();
@@ -238,8 +241,60 @@ class DashboardService
             
             if ($eT->isEmpty() && $eR->isEmpty()) continue;
             
+            $amBreakdown = [];
+            foreach ($salesMembers as $sm) {
+                $smT = $eT->where('sales_member_id', $sm->id);
+                $smR = $eR->where('sales_member_id', $sm->id);
+
+                if ($smT->isEmpty() && $smR->isEmpty()) continue;
+
+                $euBreakdown = [];
+                $endUserIds = array_unique(array_merge($smT->pluck('end_user_id')->toArray(), $smR->pluck('end_user_id')->toArray()));
+                
+                foreach ($endUserIds as $euId) {
+                    $euT = $smT->where('end_user_id', $euId);
+                    $euR = $smR->where('end_user_id', $euId);
+                    
+                    if ($euT->isEmpty() && $euR->isEmpty()) continue;
+
+                    $euBreakdown[] = [
+                        'name' => isset($endUsers[$euId]) ? $endUsers[$euId]->name : 'Umum',
+                        'prev' => [
+                             'target' => $prevMonth ? $euT->where('month', $prevMonth)->sum('target_amount') : 0,
+                             'realization' => $prevMonth ? $euR->where('month', $prevMonth)->sum('realization_amount') : 0,
+                        ],
+                        'curr' => [
+                             'target' => $euT->where('month', $month)->sum('target_amount'),
+                             'realization' => $euR->where('month', $month)->sum('realization_amount'),
+                        ],
+                        'total' => [
+                             'target' => $euT->sum('target_amount'),
+                             'realization' => $euR->sum('realization_amount'),
+                        ]
+                    ];
+                }
+
+                $amBreakdown[] = [
+                    'name' => $sm->name,
+                    'end_users' => $euBreakdown,
+                    'prev' => [
+                         'target' => $prevMonth ? $smT->where('month', $prevMonth)->sum('target_amount') : 0,
+                         'realization' => $prevMonth ? $smR->where('month', $prevMonth)->sum('realization_amount') : 0,
+                    ],
+                    'curr' => [
+                         'target' => $smT->where('month', $month)->sum('target_amount'),
+                         'realization' => $smR->where('month', $month)->sum('realization_amount'),
+                    ],
+                    'total' => [
+                         'target' => $smT->sum('target_amount'),
+                         'realization' => $smR->sum('realization_amount'),
+                    ]
+                ];
+            }
+            
             $entityPivot[] = [
                 'name' => $entity->name,
+                'ams' => $amBreakdown,
                 'prev' => [
                      'target' => $prevMonth ? $eT->where('month', $prevMonth)->sum('target_amount') : 0,
                      'realization' => $prevMonth ? $eR->where('month', $prevMonth)->sum('realization_amount') : 0,
@@ -361,6 +416,34 @@ class DashboardService
         }
 
         return $data;
+    }
+
+    private function getEndUserAchievement(array $filters)
+    {
+        $year = $filters['year'] ?? date('Y');
+        
+        $endUsers = EndUser::with(['salesTargets' => function ($q) use ($year) {
+            $q->where('year', $year);
+        }, 'salesRealizations' => function ($q) use ($year) {
+            $q->where('year', $year);
+        }])->get();
+
+        $data = [];
+        foreach ($endUsers as $endUser) {
+            $realization = $endUser->salesRealizations->sum('realization_amount');
+            if ($realization > 0) {
+                $data[] = [
+                    'end_user' => $endUser->name,
+                    'realization' => $realization,
+                ];
+            }
+        }
+
+        // Sort by realization desc to show top performers
+        usort($data, fn($a, $b) => $b['realization'] <=> $a['realization']);
+
+        // Return top 10
+        return array_slice($data, 0, 10);
     }
 
     private function getTopSalesMembers(array $filters)

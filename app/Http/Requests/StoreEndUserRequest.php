@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSalesTargetRequest extends FormRequest
+class StoreEndUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,13 +23,7 @@ class StoreSalesTargetRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'targets' => 'required|array|min:1',
-            'targets.*.year' => 'required|integer|min:2000',
-            'targets.*.month' => 'required|integer|min:1|max:12',
-            'targets.*.sales_member_name' => 'required|string|max:255',
-            'targets.*.entity_name' => 'required|string|max:255',
-            'targets.*.end_user_name' => 'required|string|max:255',
-            'targets.*.target_amount' => 'required|numeric|min:0',
+            'name' => 'required|string|max:255|unique:end_users,name'
         ];
     }
 }

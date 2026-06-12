@@ -28,6 +28,7 @@ class StoreSalesRealizationRequest extends FormRequest
             'realizations.*.month' => 'required|integer|min:1|max:12',
             'realizations.*.sales_member_name' => 'required|string|max:255',
             'realizations.*.entity_name' => 'required|string|max:255',
+            'realizations.*.end_user_name' => 'required|string|max:255',
             'realizations.*.realization_amount' => 'required|numeric|min:0',
         ];
     }
