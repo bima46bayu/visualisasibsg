@@ -31,6 +31,10 @@ class SalesRealizationDataImport implements ToModel, WithHeadingRow, WithValidat
         if (isset($data['bulan']) && !is_numeric($data['bulan'])) {
             $data['bulan'] = $months[ucfirst(strtolower(trim($data['bulan'])))] ?? $data['bulan'];
         }
+        // Pastikan mapping end_user jika header excel bernama enduser
+        if (!isset($data['end_user']) && isset($data['enduser'])) {
+            $data['end_user'] = $data['enduser'];
+        }
         return $data;
     }
 
@@ -38,7 +42,12 @@ class SalesRealizationDataImport implements ToModel, WithHeadingRow, WithValidat
     {
         $salesMember = SalesMember::where('name', $row['am'])->first();
         $entity = Entity::where('code', $row['entity'])->orWhere('name', $row['entity'])->first();
-        $endUser = EndUser::firstOrCreate(['name' => $row['end_user'] ?? 'Umum']);
+        
+        $endUserName = isset($row['end_user']) ? trim($row['end_user']) : 'Umum';
+        if (empty($endUserName)) {
+            $endUserName = 'Umum';
+        }
+        $endUser = EndUser::firstOrCreate(['name' => $endUserName]);
 
         if (!$salesMember || !$entity) {
             return null; 
@@ -73,7 +82,7 @@ class SalesRealizationDataImport implements ToModel, WithHeadingRow, WithValidat
                     $fail('Entity tidak ditemukan.');
                 }
             }],
-            'end_user' => 'required|string',
+            'end_user' => 'nullable',
             'realisasi' => 'required|numeric|min:0',
         ];
     }
