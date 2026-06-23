@@ -40,18 +40,14 @@ class SalesRealizationDataImport implements ToModel, WithHeadingRow, WithValidat
 
     public function model(array $row)
     {
-        $salesMember = SalesMember::where('name', $row['am'])->first();
-        $entity = Entity::where('code', $row['entity'])->orWhere('name', $row['entity'])->first();
+        $salesMember = SalesMember::firstOrCreate(['name' => trim($row['am'])]);
+        $entity = Entity::firstOrCreate(['name' => trim($row['entity'])]);
         
         $endUserName = isset($row['end_user']) ? trim($row['end_user']) : 'Umum';
         if (empty($endUserName)) {
             $endUserName = 'Umum';
         }
         $endUser = EndUser::firstOrCreate(['name' => $endUserName]);
-
-        if (!$salesMember || !$entity) {
-            return null; 
-        }
 
         return SalesRealization::updateOrCreate(
             [
@@ -72,16 +68,8 @@ class SalesRealizationDataImport implements ToModel, WithHeadingRow, WithValidat
         return [
             'tahun' => 'required|integer|min:2000',
             'bulan' => 'required|integer|min:1|max:12',
-            'am' => ['required', function($attribute, $value, $fail) {
-                if (!SalesMember::where('name', $value)->exists()) {
-                    $fail('AM (Sales Member) tidak ditemukan.');
-                }
-            }],
-            'entity' => ['required', function($attribute, $value, $fail) {
-                if (!Entity::where('code', $value)->orWhere('name', $value)->exists()) {
-                    $fail('Entity tidak ditemukan.');
-                }
-            }],
+            'am' => 'required|string',
+            'entity' => 'required|string',
             'end_user' => 'nullable',
             'realisasi' => 'required|numeric|min:0',
         ];

@@ -132,6 +132,14 @@ class SalesApiController extends Controller
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\SalesTargetImport, $request->file('file'));
             return response()->json(['message' => 'Target berhasil diimport.']);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMsg = 'Kesalahan pada excel: ';
+            foreach ($failures as $failure) {
+                $errorMsg .= 'Baris ' . $failure->row() . ' (' . implode(', ', $failure->errors()) . ') ';
+                break;
+            }
+            return response()->json(['error' => trim($errorMsg)], 400);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 400);
         }
@@ -143,6 +151,14 @@ class SalesApiController extends Controller
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\SalesRealizationImport, $request->file('file'));
             return response()->json(['message' => 'Realisasi berhasil diimport.']);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMsg = 'Kesalahan pada excel: ';
+            foreach ($failures as $failure) {
+                $errorMsg .= 'Baris ' . $failure->row() . ' (' . implode(', ', $failure->errors()) . ') ';
+                break;
+            }
+            return response()->json(['error' => trim($errorMsg)], 400);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 400);
         }
