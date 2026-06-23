@@ -14,6 +14,20 @@ use App\Imports\SalesTargetImport;
 
 class SalesTargetController extends Controller
 {
+    public function export(Request $request)
+    {
+        $filename = 'export_targets_' . date('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesTargetExport(
+                $request->start_year,
+                $request->start_month,
+                $request->end_year,
+                $request->end_month
+            ),
+            $filename
+        );
+    }
+
     public function index(Request $request)
     {
         $query = SalesTarget::with(['salesMember', 'entity']);

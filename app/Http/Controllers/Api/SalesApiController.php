@@ -148,6 +148,34 @@ class SalesApiController extends Controller
         }
     }
 
+    public function exportTargets(Request $request)
+    {
+        $filename = 'export_targets_' . date('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesTargetExport(
+                $request->start_year,
+                $request->start_month,
+                $request->end_year,
+                $request->end_month
+            ),
+            $filename
+        );
+    }
+
+    public function exportRealizations(Request $request)
+    {
+        $filename = 'export_realisasi_' . date('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesRealizationExport(
+                $request->start_year,
+                $request->start_month,
+                $request->end_year,
+                $request->end_month
+            ),
+            $filename
+        );
+    }
+
     private function getMasterModel($type)
     {
         switch ($type) {

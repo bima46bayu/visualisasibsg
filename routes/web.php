@@ -26,9 +26,11 @@ Route::prefix('master')->group(function () {
 Route::get('/sales-management', [SalesManagementController::class, 'index'])->name('sales-management.index');
 
 Route::prefix('sales')->group(function () {
+    Route::get('targets/export', [SalesTargetController::class, 'export'])->name('sales-targets.export');
     Route::post('targets/import', [SalesTargetController::class, 'import'])->name('sales-targets.import');
     Route::resource('targets', SalesTargetController::class)->names('sales-targets');
     
+    Route::get('realizations/export', [SalesRealizationController::class, 'export'])->name('sales-realizations.export');
     Route::post('realizations/import', [SalesRealizationController::class, 'import'])->name('sales-realizations.import');
     Route::resource('realizations', SalesRealizationController::class)->names('sales-realizations');
 });

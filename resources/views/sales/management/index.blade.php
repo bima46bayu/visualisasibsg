@@ -5,6 +5,15 @@
 <div class="space-y-6 max-w-[1600px] mx-auto pb-10" x-data="{ 
     tab: new URLSearchParams(location.search).get('realisasi_page') || new URLSearchParams(location.search).get('tab') === 'realisasi' ? 'realisasi' : 'target',
     
+    // Export State
+    isExportModalOpen: false,
+    exportFilter: {
+        start_year: new Date().getFullYear() - 1,
+        start_month: 1,
+        end_year: new Date().getFullYear(),
+        end_month: new Date().getMonth() + 1
+    },
+
     // Target
     isAddTargetOpen: false,
     isEditTargetOpen: false,
@@ -114,6 +123,9 @@
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold text-slate-800">Kelola Target</h3>
                     <div class="flex gap-2">
+                        <button @click="isExportModalOpen = true" class="bg-amber-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-amber-700 transition flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export Excel
+                        </button>
                         <button onclick="document.getElementById('importTargetModal').classList.remove('hidden')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-emerald-700 transition flex items-center">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import Excel
                         </button>
@@ -188,6 +200,9 @@
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold text-slate-800">Kelola Realisasi</h3>
                     <div class="flex gap-2">
+                        <button @click="isExportModalOpen = true" class="bg-amber-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-amber-700 transition flex items-center">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export Excel
+                        </button>
                         <button onclick="document.getElementById('importRealisasiModal').classList.remove('hidden')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-emerald-700 transition flex items-center">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import Excel
                         </button>
@@ -511,6 +526,62 @@
             </form>
         </div>
     </div>
+
+    <!-- Export Modal -->
+    <div x-show="isExportModalOpen" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-md" @click.away="isExportModalOpen = false">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Export Data <span x-text="tab === 'target' ? 'Target' : 'Realisasi'"></span></h3>
+            <p class="text-sm text-slate-600 mb-4">Pilih rentang waktu data yang ingin Anda export ke format Excel. Biarkan kosong jika ingin export semua data.</p>
+            
+            <form :action="tab === 'target' ? '{{ route('sales-targets.export') }}' : '{{ route('sales-realizations.export') }}'" method="GET">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tahun Awal</label>
+                        <select name="start_year" x-model="exportFilter.start_year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500">
+                            <option value="0">Semua</option>
+                            @for($y = 2024; $y <= 2028; $y++)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Bulan Awal</label>
+                        <select name="start_month" x-model="exportFilter.start_month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500">
+                            @for($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}">{{ $m }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tahun Akhir</label>
+                        <select name="end_year" x-model="exportFilter.end_year" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500">
+                            <option value="0">Semua</option>
+                            @for($y = 2024; $y <= 2028; $y++)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Bulan Akhir</label>
+                        <select name="end_month" x-model="exportFilter.end_month" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500">
+                            @for($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}">{{ $m }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="isExportModalOpen = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Batal</button>
+                    <button type="submit" @click="isExportModalOpen = false" class="px-4 py-2 text-sm text-white bg-amber-600 rounded-lg hover:bg-amber-700 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Import Modals -->
@@ -576,4 +647,6 @@
         <option value="{{ $m }}">{{ ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][$m - 1] }}</option>
     @endfor
 </datalist>
+<!-- Export Modal -->
+
 @endsection

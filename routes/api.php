@@ -27,7 +27,9 @@ Route::middleware('auth:sanctum')->prefix('sales')->group(function () {
     Route::post('/realizations', [SalesApiController::class, 'storeRealization']);
     Route::delete('/realizations/{id}', [SalesApiController::class, 'destroyRealization']);
     Route::post('/targets/import', [SalesApiController::class, 'importTargets']);
+    Route::get('/targets/export', [SalesApiController::class, 'exportTargets']);
     Route::post('/realizations/import', [SalesApiController::class, 'importRealizations']);
+    Route::get('/realizations/export', [SalesApiController::class, 'exportRealizations']);
 
     // Master CRUD Endpoints
     Route::get('/master/{type}', [SalesApiController::class, 'getMasterList']);

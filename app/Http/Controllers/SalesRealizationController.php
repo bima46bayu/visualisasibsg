@@ -14,6 +14,20 @@ use App\Imports\SalesRealizationImport;
 
 class SalesRealizationController extends Controller
 {
+    public function export(Request $request)
+    {
+        $filename = 'export_realisasi_' . date('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesRealizationExport(
+                $request->start_year,
+                $request->start_month,
+                $request->end_year,
+                $request->end_month
+            ),
+            $filename
+        );
+    }
+
     public function index(Request $request)
     {
         $query = SalesRealization::with(['salesMember', 'entity']);
