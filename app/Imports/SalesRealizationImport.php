@@ -18,7 +18,7 @@ class SalesRealizationImport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            'Data' => new SalesRealizationDataImport(),
+            0 => new SalesRealizationDataImport(),
         ];
     }
 }
