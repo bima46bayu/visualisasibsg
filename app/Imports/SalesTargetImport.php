@@ -40,8 +40,17 @@ class SalesTargetDataImport implements ToModel, WithHeadingRow, WithValidation, 
 
     public function model(array $row)
     {
-        $salesMember = SalesMember::firstOrCreate(['name' => trim($row['am'])]);
-        $entity = Entity::firstOrCreate(['name' => trim($row['entity'])]);
+        $amName = trim($row['am']);
+        $entityName = trim($row['entity']);
+
+        $salesMember = SalesMember::firstOrCreate(
+            ['name' => $amName],
+            ['code' => 'SM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $amName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
+        $entity = Entity::firstOrCreate(
+            ['name' => $entityName],
+            ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
         
         $endUserName = isset($row['end_user']) ? trim($row['end_user']) : 'Umum';
         if (empty($endUserName)) {

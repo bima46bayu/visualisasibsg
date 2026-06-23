@@ -51,9 +51,18 @@ class SalesRealizationController extends Controller
     public function store(StoreSalesRealizationRequest $request)
     {
         foreach ($request->realizations as $realizationData) {
-            $salesMember = SalesMember::firstOrCreate(['name' => $realizationData['sales_member_name']]);
-            $entity = Entity::firstOrCreate(['name' => $realizationData['entity_name']]);
-            $endUser = EndUser::firstOrCreate(['name' => $realizationData['end_user_name']]);
+            $amName = trim($realizationData['sales_member_name']);
+            $entityName = trim($realizationData['entity_name']);
+            
+            $salesMember = SalesMember::firstOrCreate(
+                ['name' => $amName],
+                ['code' => 'SM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $amName), 0, 3)) . '-' . rand(1000, 9999)]
+            );
+            $entity = Entity::firstOrCreate(
+                ['name' => $entityName],
+                ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
+            );
+            $endUser = EndUser::firstOrCreate(['name' => trim($realizationData['end_user_name'])]);
 
             SalesRealization::updateOrCreate(
                 [
@@ -83,9 +92,18 @@ class SalesRealizationController extends Controller
 
     public function update(UpdateSalesRealizationRequest $request, SalesRealization $realization)
     {
-        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
-        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
-        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
+        $amName = trim($request->sales_member_name);
+        $entityName = trim($request->entity_name);
+        
+        $salesMember = SalesMember::firstOrCreate(
+            ['name' => $amName],
+            ['code' => 'SM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $amName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
+        $entity = Entity::firstOrCreate(
+            ['name' => $entityName],
+            ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
+        $endUser = EndUser::firstOrCreate(['name' => trim($request->end_user_name)]);
 
         $existing = SalesRealization::where('year', $request->year)
             ->where('month', $request->month)

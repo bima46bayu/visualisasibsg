@@ -51,9 +51,18 @@ class SalesTargetController extends Controller
     public function store(StoreSalesTargetRequest $request)
     {
         foreach ($request->targets as $targetData) {
-            $salesMember = SalesMember::firstOrCreate(['name' => $targetData['sales_member_name']]);
-            $entity = Entity::firstOrCreate(['name' => $targetData['entity_name']]);
-            $endUser = EndUser::firstOrCreate(['name' => $targetData['end_user_name']]);
+            $amName = trim($targetData['sales_member_name']);
+            $entityName = trim($targetData['entity_name']);
+            
+            $salesMember = SalesMember::firstOrCreate(
+                ['name' => $amName],
+                ['code' => 'SM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $amName), 0, 3)) . '-' . rand(1000, 9999)]
+            );
+            $entity = Entity::firstOrCreate(
+                ['name' => $entityName],
+                ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
+            );
+            $endUser = EndUser::firstOrCreate(['name' => trim($targetData['end_user_name'])]);
 
             SalesTarget::updateOrCreate(
                 [
@@ -83,9 +92,18 @@ class SalesTargetController extends Controller
 
     public function update(UpdateSalesTargetRequest $request, SalesTarget $target)
     {
-        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
-        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
-        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
+        $amName = trim($request->sales_member_name);
+        $entityName = trim($request->entity_name);
+        
+        $salesMember = SalesMember::firstOrCreate(
+            ['name' => $amName],
+            ['code' => 'SM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $amName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
+        $entity = Entity::firstOrCreate(
+            ['name' => $entityName],
+            ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
+        );
+        $endUser = EndUser::firstOrCreate(['name' => trim($request->end_user_name)]);
 
         $existing = SalesTarget::where('year', $request->year)
             ->where('month', $request->month)
