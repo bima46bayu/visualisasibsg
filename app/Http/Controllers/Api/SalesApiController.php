@@ -206,7 +206,23 @@ class SalesApiController extends Controller
     public function getMasterList(Request $request, $type)
     {
         $model = $this->getMasterModel($type);
-        return response()->json($model->orderBy('id', 'desc')->paginate(10));
+        $query = $model->newQuery();
+
+        if ($type === 'sales_members') {
+            $query->with('team');
+        }
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search, $type) {
+                $q->where('name', 'like', "%{$search}%");
+                if ($type !== 'end_users') {
+                    $q->orWhere('code', 'like', "%{$search}%");
+                }
+            });
+        }
+
+        return response()->json($query->orderBy('id', 'desc')->paginate(10));
     }
 
     public function storeMaster(Request $request, $type)
@@ -214,7 +230,18 @@ class SalesApiController extends Controller
         $request->validate(['name' => 'required|string|max:255']);
         $model = $this->getMasterModel($type);
         $data = ['name' => $request->name];
-        if ($request->has('code')) $data['code'] = $request->code;
+        
+        if ($request->has('status')) {
+            $data['status'] = $request->status;
+        }
+        if ($request->has('team_id') && $type === 'sales_members') {
+            $data['team_id'] = $request->team_id;
+        }
+
+        if ($type !== 'end_users') {
+            $data['code'] = $request->filled('code') ? $request->code : strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $request->name), 0, 5)) . rand(100, 999);
+        }
+
         $created = $model->create($data);
         return response()->json(['message' => 'Berhasil ditambahkan', 'data' => $created]);
     }
@@ -224,7 +251,22 @@ class SalesApiController extends Controller
         $request->validate(['name' => 'required|string|max:255']);
         $model = $this->getMasterModel($type)->findOrFail($id);
         $data = ['name' => $request->name];
-        if ($request->has('code')) $data['code'] = $request->code;
+        
+        if ($request->has('status')) {
+            $data['status'] = $request->status;
+        }
+        if ($request->has('team_id') && $type === 'sales_members') {
+            $data['team_id'] = $request->team_id;
+        }
+
+        if ($type !== 'end_users') {
+            if ($request->filled('code')) {
+                $data['code'] = $request->code;
+            } elseif (empty($model->code)) {
+                $data['code'] = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $request->name), 0, 5)) . rand(100, 999);
+            }
+        }
+
         $model->update($data);
         return response()->json(['message' => 'Berhasil diupdate', 'data' => $model]);
     }
