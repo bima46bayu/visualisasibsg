@@ -276,8 +276,15 @@ class ProfitabilityApiController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx,xls'
         ]);
-
-        Excel::import(new ProfitabilityImport(), $request->file('file'));
+        // Simpan file sementara ke local storage untuk menghindari error open_basedir pada hosting
+        $path = $request->file('file')->store('temp', 'local');
+        
+        try {
+            Excel::import(new ProfitabilityImport(), $path, 'local');
+        } finally {
+            // Hapus file setelah import selesai
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+        }
 
         return response()->json(['message' => 'Data profitability berhasil diimpor']);
     }
