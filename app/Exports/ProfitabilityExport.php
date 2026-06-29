@@ -45,7 +45,9 @@ class ProfitabilityExport implements WithHeadings, WithEvents, FromCollection, W
         return [
             $item->profitability->year ?? '',
             $months[$item->profitability->month ?? 1] ?? '',
-            $item->profitability->entity->name ?? '',
+            isset($item->profitability->subEntity) 
+                ? ($item->profitability->entity->name . ' - ' . $item->profitability->subEntity->name) 
+                : ($item->profitability->entity->name ?? ''),
             $item->category,
             $item->description,
             $item->amount,
@@ -86,22 +88,42 @@ class ProfitabilityExport implements WithHeadings, WithEvents, FromCollection, W
                 $validationMonth->setShowDropDown(true);
                 $validationMonth->setFormula1('"Januari,Februari,Maret,April,Mei,Juni,Juli,Agustus,September,Oktober,November,Desember"');
 
-                // Validation for Entity
-                $entities = Entity::pluck('name')->implode(',');
-                // limit string to 255 chars to prevent Excel formula error
-                if (strlen($entities) > 255) {
-                    $entities = substr($entities, 0, 255);
-                    $entities = substr($entities, 0, strrpos($entities, ','));
+                // Load entities and sub entities
+                $entitiesData = [];
+                $entities = Entity::with('subEntities')->get();
+                foreach ($entities as $entity) {
+                    if ($entity->subEntities->count() > 0) {
+                        foreach ($entity->subEntities as $sub) {
+                            $entitiesData[] = $entity->name . ' - ' . $sub->name;
+                        }
+                        $entitiesData[] = $entity->name; // In case they just want the main entity
+                    } else {
+                        $entitiesData[] = $entity->name;
+                    }
                 }
 
-                if (!empty($entities)) {
-                    $validationEnt = $sheet->getDataValidation('C2:C1000');
-                    $validationEnt->setType(DataValidation::TYPE_LIST);
-                    $validationEnt->setErrorStyle(DataValidation::STYLE_STOP);
-                    $validationEnt->setAllowBlank(false);
-                    $validationEnt->setShowDropDown(true);
-                    $validationEnt->setFormula1('"' . $entities . '"');
+                // Create hidden list sheet to bypass 255 chars limit
+                $spreadsheet = $event->sheet->getDelegate()->getParent();
+                $listSheet = $spreadsheet->createSheet();
+                $listSheet->setTitle('Lists');
+                $listSheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_HIDDEN);
+                
+                foreach ($entitiesData as $index => $ent) { 
+                    $listSheet->setCellValue('A' . ($index + 1), $ent); 
                 }
+                
+                $spreadsheet->addNamedRange(new \PhpOffice\PhpSpreadsheet\NamedRange('EntityList', $listSheet, 'Lists!$A$1:$A$' . count($entitiesData)));
+                
+                // Back to main sheet
+                $spreadsheet->setActiveSheetIndex(0);
+
+                // Validation for Entity using NamedRange
+                $validationEnt = $sheet->getDataValidation('C2:C1000');
+                $validationEnt->setType(DataValidation::TYPE_LIST);
+                $validationEnt->setErrorStyle(DataValidation::STYLE_STOP);
+                $validationEnt->setAllowBlank(false);
+                $validationEnt->setShowDropDown(true);
+                $validationEnt->setFormula1('=EntityList');
 
                 // Protect Header Row
                 $sheet->getProtection()->setSheet(true);

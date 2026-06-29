@@ -29,7 +29,10 @@ class ProfitabilityImport implements ToCollection, WithHeadingRow
             $year = $row['tahun'];
             $monthString = ucfirst(strtolower(trim($row['bulan'])));
             $month = $months[$monthString] ?? $row['bulan'];
-            $entityName = trim($row['entity']);
+            $entityString = trim($row['entity']);
+            $parts = explode(' - ', $entityString, 2);
+            $entityName = trim($parts[0]);
+            $subEntityName = isset($parts[1]) ? trim($parts[1]) : null;
 
             // Get or create entity
             $entity = Entity::firstOrCreate(
@@ -37,13 +40,23 @@ class ProfitabilityImport implements ToCollection, WithHeadingRow
                 ['code' => 'ENT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $entityName), 0, 3)) . '-' . rand(1000, 9999)]
             );
 
-            $key = "{$year}_{$month}_{$entity->id}";
+            // Get or create sub entity if it exists
+            $subEntity = null;
+            if ($subEntityName) {
+                $subEntity = \App\Models\ProfitabilitySubEntity::firstOrCreate(
+                    ['entity_id' => $entity->id, 'name' => $subEntityName],
+                    ['code' => 'SUB-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $subEntityName), 0, 3)) . '-' . rand(1000, 9999), 'is_active' => true]
+                );
+            }
+
+            $key = "{$year}_{$month}_{$entity->id}_" . ($subEntity ? $subEntity->id : 'null');
 
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [
                     'year' => $year,
                     'month' => $month,
                     'entity_id' => $entity->id,
+                    'sub_entity_id' => $subEntity ? $subEntity->id : null,
                     'items' => []
                 ];
             }
@@ -68,7 +81,8 @@ class ProfitabilityImport implements ToCollection, WithHeadingRow
                 [
                     'year' => $group['year'],
                     'month' => $group['month'],
-                    'entity_id' => $group['entity_id']
+                    'entity_id' => $group['entity_id'],
+                    'sub_entity_id' => $group['sub_entity_id']
                 ]
             );
 
@@ -78,19 +92,19 @@ class ProfitabilityImport implements ToCollection, WithHeadingRow
 
             // Recalculate totals
             $totalPendapatan = $prof->items()->where('category', 'pendapatan')->sum('amount');
-            $totalHpp = $prof->items()->where('category', 'hpp')->sum('amount');
+            $totalHpp = abs($prof->items()->where('category', 'hpp')->sum('amount'));
             $labaKotor = $totalPendapatan - $totalHpp;
 
-            $biayaMarketing = $prof->items()->where('category', 'biaya_marketing')->sum('amount');
-            $biayaAdmin = $prof->items()->where('category', 'biaya_admin')->sum('amount');
-            $biayaNonOps = $prof->items()->where('category', 'biaya_non_ops')->sum('amount');
+            $biayaMarketing = abs($prof->items()->where('category', 'biaya_marketing')->sum('amount'));
+            $biayaAdmin = abs($prof->items()->where('category', 'biaya_admin')->sum('amount'));
+            $biayaNonOps = abs($prof->items()->where('category', 'biaya_non_ops')->sum('amount'));
             $totalOverhead = $biayaMarketing + $biayaAdmin + $biayaNonOps;
 
             $labaOperasi = $labaKotor - $totalOverhead;
 
             $pendapatanLain = $prof->items()->where('category', 'pendapatan_lain')->sum('amount');
-            $biayaLain = $prof->items()->where('category', 'biaya_lain')->sum('amount');
-            $pajak = $prof->items()->where('category', 'pajak')->sum('amount');
+            $biayaLain = abs($prof->items()->where('category', 'biaya_lain')->sum('amount'));
+            $pajak = abs($prof->items()->where('category', 'pajak')->sum('amount'));
 
             $labaSebelumPajak = $labaOperasi + $pendapatanLain - $biayaLain;
             $labaBersih = $labaSebelumPajak - $pajak;

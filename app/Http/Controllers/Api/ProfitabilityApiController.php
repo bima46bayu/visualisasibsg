@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Profitability;
 use App\Models\Entity;
+use App\Models\ProfitabilitySubEntity;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProfitabilityExport;
@@ -28,9 +29,48 @@ class ProfitabilityApiController extends Controller
         return $profitability;
     }
 
+    public function getSubEntities()
+    {
+        $subEntities = ProfitabilitySubEntity::with('entity')->get();
+        return response()->json($subEntities);
+    }
+
+    public function storeSubEntity(Request $request)
+    {
+        $data = $request->validate([
+            'entity_id' => 'required|exists:entities,id',
+            'name' => 'required|string',
+            'code' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
+
+        $subEntity = ProfitabilitySubEntity::create($data);
+        return response()->json($subEntity, 201);
+    }
+
+    public function updateSubEntity(Request $request, $id)
+    {
+        $data = $request->validate([
+            'entity_id' => 'required|exists:entities,id',
+            'name' => 'required|string',
+            'code' => 'nullable|string',
+            'is_active' => 'boolean'
+        ]);
+
+        $subEntity = ProfitabilitySubEntity::findOrFail($id);
+        $subEntity->update($data);
+        return response()->json($subEntity);
+    }
+
+    public function destroySubEntity($id)
+    {
+        ProfitabilitySubEntity::findOrFail($id)->delete();
+        return response()->json(['message' => 'Sub Entity deleted successfully']);
+    }
+
     public function index(Request $request)
     {
-        $query = Profitability::with(['entity', 'items']);
+        $query = Profitability::with(['entity', 'subEntity', 'items']);
         
         if ($request->year) $query->where('year', $request->year);
         if ($request->month) $query->where('month', $request->month);
@@ -91,26 +131,72 @@ class ProfitabilityApiController extends Controller
         ];
 
         $entityMargin = [];
-        $entities = Entity::all();
+        $entities = Entity::with('subEntities')->get();
         foreach ($entities as $entity) {
-            $entityData = $profitabilities->where('entity_id', $entity->id);
-            if ($entityData->isEmpty()) continue;
+            $hasSubEntities = $entity->subEntities->count() > 0;
             
-            $pendapatan = $entityData->sum('pendapatan');
-            $labaKotor = $entityData->sum('laba_kotor');
-            $labaBersih = $entityData->sum('laba_bersih');
-            $hpp = 0;
-            foreach ($entityData as $ed) {
-                $hpp += $ed->items->where('category', 'hpp')->sum('amount');
+            if ($hasSubEntities) {
+                foreach ($entity->subEntities as $subEntity) {
+                    $entityData = $profitabilities->where('entity_id', $entity->id)->where('sub_entity_id', $subEntity->id);
+                    if ($entityData->isEmpty()) continue;
+                    
+                    $pendapatan = $entityData->sum('pendapatan');
+                    $labaKotor = $entityData->sum('laba_kotor');
+                    $labaBersih = $entityData->sum('laba_bersih');
+                    $hpp = 0;
+                    foreach ($entityData as $ed) {
+                        $hpp += $ed->items->where('category', 'hpp')->sum('amount');
+                    }
+                    
+                    $entityMargin[] = [
+                        'entity' => $entity->name . ' - ' . $subEntity->name,
+                        'revenue' => $pendapatan,
+                        'cogs' => $hpp,
+                        'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
+                        'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
+                    ];
+                }
+                
+                // Juga ambil data entity utama yang TIDAK memiliki sub_entity_id (jika ada)
+                $mainEntityData = $profitabilities->where('entity_id', $entity->id)->whereNull('sub_entity_id');
+                if ($mainEntityData->isNotEmpty()) {
+                    $pendapatan = $mainEntityData->sum('pendapatan');
+                    $labaKotor = $mainEntityData->sum('laba_kotor');
+                    $labaBersih = $mainEntityData->sum('laba_bersih');
+                    $hpp = 0;
+                    foreach ($mainEntityData as $ed) {
+                        $hpp += $ed->items->where('category', 'hpp')->sum('amount');
+                    }
+                    
+                    $entityMargin[] = [
+                        'entity' => $entity->name,
+                        'revenue' => $pendapatan,
+                        'cogs' => $hpp,
+                        'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
+                        'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
+                    ];
+                }
+                
+            } else {
+                $entityData = $profitabilities->where('entity_id', $entity->id);
+                if ($entityData->isEmpty()) continue;
+                
+                $pendapatan = $entityData->sum('pendapatan');
+                $labaKotor = $entityData->sum('laba_kotor');
+                $labaBersih = $entityData->sum('laba_bersih');
+                $hpp = 0;
+                foreach ($entityData as $ed) {
+                    $hpp += $ed->items->where('category', 'hpp')->sum('amount');
+                }
+                
+                $entityMargin[] = [
+                    'entity' => $entity->name,
+                    'revenue' => $pendapatan,
+                    'cogs' => $hpp,
+                    'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
+                    'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
+                ];
             }
-            
-            $entityMargin[] = [
-                'entity' => $entity->name,
-                'revenue' => $pendapatan,
-                'cogs' => $hpp,
-                'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
-                'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
-            ];
         }
 
         usort($entityMargin, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
@@ -169,7 +255,8 @@ class ProfitabilityApiController extends Controller
             'drafts' => 'required|array',
             'drafts.*.year' => 'required|integer',
             'drafts.*.month' => 'required|integer',
-            'drafts.*.entity_id' => 'required|string',
+            'drafts.*.entity_id' => 'required',
+            'drafts.*.sub_entity_id' => 'nullable',
             'drafts.*.pendapatan_items' => 'nullable|array',
             'drafts.*.hpp_items' => 'nullable|array',
             'drafts.*.biaya_marketing_items' => 'nullable|array',
@@ -191,6 +278,7 @@ class ProfitabilityApiController extends Controller
                 'year' => $d['year'],
                 'month' => $d['month'],
                 'entity_id' => $d['entity_id'],
+                'sub_entity_id' => $d['sub_entity_id'] ?? null,
                 'pendapatan' => $d['pendapatan'] ?? 0,
                 'laba_kotor' => $d['laba_kotor'] ?? 0,
                 'total_biaya_overhead' => $d['total_biaya_overhead'] ?? 0,
@@ -220,7 +308,8 @@ class ProfitabilityApiController extends Controller
         $d = $request->validate([
             'year' => 'required|integer',
             'month' => 'required|integer',
-            'entity_id' => 'required|string',
+            'entity_id' => 'required',
+            'sub_entity_id' => 'nullable',
             'pendapatan_items' => 'nullable|array',
             'hpp_items' => 'nullable|array',
             'biaya_marketing_items' => 'nullable|array',
@@ -242,6 +331,7 @@ class ProfitabilityApiController extends Controller
             'year' => $d['year'],
             'month' => $d['month'],
             'entity_id' => $d['entity_id'],
+            'sub_entity_id' => $d['sub_entity_id'] ?? null,
             'pendapatan' => $d['pendapatan'] ?? 0,
             'laba_kotor' => $d['laba_kotor'] ?? 0,
             'total_biaya_overhead' => $d['total_biaya_overhead'] ?? 0,
@@ -279,9 +369,15 @@ class ProfitabilityApiController extends Controller
         // Simpan file sementara ke local storage untuk menghindari error open_basedir pada hosting
         $path = $request->file('file')->store('temp', 'local');
         
+        // Nonaktifkan E_WARNING sementara karena PhpSpreadsheet sering memicu 
+        // open_basedir warning saat memeriksa path file di dalam ZIP (misal: /xl/worksheets/...)
+        $oldErrorLevel = error_reporting(E_ALL & ~E_WARNING);
+        
         try {
             Excel::import(new ProfitabilityImport(), $path, 'local');
         } finally {
+            // Kembalikan level error reporting ke semula
+            error_reporting($oldErrorLevel);
             // Hapus file setelah import selesai
             \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
         }

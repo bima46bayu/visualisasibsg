@@ -50,6 +50,11 @@ Route::middleware('auth:sanctum')->prefix('users')->group(function () {
 
 use App\Http\Controllers\Api\ProfitabilityApiController;
 Route::middleware('auth:sanctum')->prefix('profitabilities')->group(function () {
+    Route::get('/sub-entities', [ProfitabilityApiController::class, 'getSubEntities']);
+    Route::post('/sub-entities', [ProfitabilityApiController::class, 'storeSubEntity']);
+    Route::put('/sub-entities/{id}', [ProfitabilityApiController::class, 'updateSubEntity']);
+    Route::delete('/sub-entities/{id}', [ProfitabilityApiController::class, 'destroySubEntity']);
+
     Route::get('/dashboard', [ProfitabilityApiController::class, 'dashboard']);
     Route::get('/export', [ProfitabilityApiController::class, 'export']);
     Route::get('/export-template', [ProfitabilityApiController::class, 'exportTemplate']);
