@@ -76,6 +76,34 @@ class SalesApiController extends Controller
         return response()->json(['message' => 'Targets saved successfully']);
     }
 
+    public function updateTarget(Request $request, $id)
+    {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer',
+            'sales_member_name' => 'required|string',
+            'entity_name' => 'required|string',
+            'end_user_name' => 'required|string',
+            'target_amount' => 'required|numeric',
+        ]);
+
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
+
+        $target = SalesTarget::findOrFail($id);
+        $target->update([
+            'year' => $request->year,
+            'month' => $request->month,
+            'sales_member_id' => $salesMember->id,
+            'entity_id' => $entity->id,
+            'end_user_id' => $endUser->id,
+            'target_amount' => $request->target_amount,
+        ]);
+
+        return response()->json(['message' => 'Target updated successfully']);
+    }
+
     public function destroyTarget($id)
     {
         SalesTarget::findOrFail($id)->delete();
@@ -119,6 +147,34 @@ class SalesApiController extends Controller
         }
 
         return response()->json(['message' => 'Realizations saved successfully']);
+    }
+
+    public function updateRealization(Request $request, $id)
+    {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer',
+            'sales_member_name' => 'required|string',
+            'entity_name' => 'required|string',
+            'end_user_name' => 'required|string',
+            'realization_amount' => 'required|numeric',
+        ]);
+
+        $salesMember = SalesMember::firstOrCreate(['name' => $request->sales_member_name]);
+        $entity = Entity::firstOrCreate(['name' => $request->entity_name]);
+        $endUser = EndUser::firstOrCreate(['name' => $request->end_user_name]);
+
+        $realization = SalesRealization::findOrFail($id);
+        $realization->update([
+            'year' => $request->year,
+            'month' => $request->month,
+            'sales_member_id' => $salesMember->id,
+            'entity_id' => $entity->id,
+            'end_user_id' => $endUser->id,
+            'realization_amount' => $request->realization_amount,
+        ]);
+
+        return response()->json(['message' => 'Realization updated successfully']);
     }
 
     public function destroyRealization($id)

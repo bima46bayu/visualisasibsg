@@ -21,10 +21,12 @@ Route::middleware('auth:sanctum')->prefix('sales')->group(function () {
     
     Route::get('/targets', [SalesApiController::class, 'getTargets']);
     Route::post('/targets', [SalesApiController::class, 'storeTarget']);
+    Route::put('/targets/{id}', [SalesApiController::class, 'updateTarget']);
     Route::delete('/targets/{id}', [SalesApiController::class, 'destroyTarget']);
     
     Route::get('/realizations', [SalesApiController::class, 'getRealizations']);
     Route::post('/realizations', [SalesApiController::class, 'storeRealization']);
+    Route::put('/realizations/{id}', [SalesApiController::class, 'updateRealization']);
     Route::delete('/realizations/{id}', [SalesApiController::class, 'destroyRealization']);
     Route::post('/targets/import', [SalesApiController::class, 'importTargets']);
     Route::get('/targets/export', [SalesApiController::class, 'exportTargets']);
@@ -44,4 +46,16 @@ Route::middleware('auth:sanctum')->prefix('users')->group(function () {
     Route::post('/', [UserController::class, 'store']);
     Route::put('/{id}', [UserController::class, 'update']);
     Route::delete('/{id}', [UserController::class, 'destroy']);
+});
+
+use App\Http\Controllers\Api\ProfitabilityApiController;
+Route::middleware('auth:sanctum')->prefix('profitabilities')->group(function () {
+    Route::get('/dashboard', [ProfitabilityApiController::class, 'dashboard']);
+    Route::get('/export', [ProfitabilityApiController::class, 'export']);
+    Route::get('/export-template', [ProfitabilityApiController::class, 'exportTemplate']);
+    Route::post('/import', [ProfitabilityApiController::class, 'import']);
+    Route::get('/', [ProfitabilityApiController::class, 'index']);
+    Route::post('/', [ProfitabilityApiController::class, 'store']);
+    Route::put('/{id}', [ProfitabilityApiController::class, 'update']);
+    Route::delete('/{id}', [ProfitabilityApiController::class, 'destroy']);
 });
