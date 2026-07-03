@@ -133,70 +133,75 @@ class ProfitabilityApiController extends Controller
         $entityMargin = [];
         $entities = Entity::with('subEntities')->get();
         foreach ($entities as $entity) {
-            $hasSubEntities = $entity->subEntities->count() > 0;
-            
-            if ($hasSubEntities) {
-                foreach ($entity->subEntities as $subEntity) {
-                    $entityData = $profitabilities->where('entity_id', $entity->id)->where('sub_entity_id', $subEntity->id);
-                    if ($entityData->isEmpty()) continue;
-                    
-                    $pendapatan = $entityData->sum('pendapatan');
-                    $labaKotor = $entityData->sum('laba_kotor');
-                    $labaBersih = $entityData->sum('laba_bersih');
-                    $hpp = 0;
-                    foreach ($entityData as $ed) {
-                        $hpp += $ed->items->where('category', 'hpp')->sum('amount');
-                    }
-                    
-                    $entityMargin[] = [
-                        'entity' => $entity->name . ' - ' . $subEntity->name,
-                        'revenue' => $pendapatan,
-                        'cogs' => $hpp,
-                        'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
-                        'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
-                    ];
-                }
-                
-                // Juga ambil data entity utama yang TIDAK memiliki sub_entity_id (jika ada)
-                $mainEntityData = $profitabilities->where('entity_id', $entity->id)->whereNull('sub_entity_id');
-                if ($mainEntityData->isNotEmpty()) {
-                    $pendapatan = $mainEntityData->sum('pendapatan');
-                    $labaKotor = $mainEntityData->sum('laba_kotor');
-                    $labaBersih = $mainEntityData->sum('laba_bersih');
-                    $hpp = 0;
-                    foreach ($mainEntityData as $ed) {
-                        $hpp += $ed->items->where('category', 'hpp')->sum('amount');
-                    }
-                    
-                    $entityMargin[] = [
-                        'entity' => $entity->name,
-                        'revenue' => $pendapatan,
-                        'cogs' => $hpp,
-                        'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
-                        'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
-                    ];
-                }
-                
-            } else {
-                $entityData = $profitabilities->where('entity_id', $entity->id);
-                if ($entityData->isEmpty()) continue;
-                
-                $pendapatan = $entityData->sum('pendapatan');
-                $labaKotor = $entityData->sum('laba_kotor');
-                $labaBersih = $entityData->sum('laba_bersih');
-                $hpp = 0;
-                foreach ($entityData as $ed) {
-                    $hpp += $ed->items->where('category', 'hpp')->sum('amount');
-                }
-                
-                $entityMargin[] = [
-                    'entity' => $entity->name,
-                    'revenue' => $pendapatan,
-                    'cogs' => $hpp,
-                    'gross_margin' => $pendapatan > 0 ? round(($labaKotor / $pendapatan) * 100, 2) : 0,
-                    'net_margin' => $pendapatan > 0 ? round(($labaBersih / $pendapatan) * 100, 2) : 0,
-                ];
+            $entityData = $profitabilities->where('entity_id', $entity->id);
+            if ($entityData->isEmpty()) continue;
+
+            $totalPendapatan = $entityData->sum('pendapatan');
+            $totalLabaKotor = $entityData->sum('laba_kotor');
+            $totalLabaBersih = $entityData->sum('laba_bersih');
+            $totalHpp = 0;
+            foreach ($entityData as $ed) {
+                $totalHpp += $ed->items->where('category', 'hpp')->sum('amount');
             }
+
+            $mainEntityRow = [
+                'entity' => $entity->name,
+                'revenue' => $totalPendapatan,
+                'cogs' => $totalHpp,
+                'gross_margin' => $totalPendapatan > 0 ? round(($totalLabaKotor / $totalPendapatan) * 100, 2) : 0,
+                'net_margin' => $totalPendapatan > 0 ? round(($totalLabaBersih / $totalPendapatan) * 100, 2) : 0,
+                'subRows' => []
+            ];
+
+            if ($entity->subEntities->count() > 0) {
+                foreach ($entity->subEntities as $subEntity) {
+                    $subData = $entityData->where('sub_entity_id', $subEntity->id);
+                    if ($subData->isEmpty()) continue;
+
+                    $subPendapatan = $subData->sum('pendapatan');
+                    $subLabaKotor = $subData->sum('laba_kotor');
+                    $subLabaBersih = $subData->sum('laba_bersih');
+                    $subHpp = 0;
+                    foreach ($subData as $ed) {
+                        $subHpp += $ed->items->where('category', 'hpp')->sum('amount');
+                    }
+
+                    $mainEntityRow['subRows'][] = [
+                        'id' => $entity->id . '-' . $subEntity->id,
+                        'entity' => $subEntity->name,
+                        'revenue' => $subPendapatan,
+                        'cogs' => $subHpp,
+                        'gross_margin' => $subPendapatan > 0 ? round(($subLabaKotor / $subPendapatan) * 100, 2) : 0,
+                        'net_margin' => $subPendapatan > 0 ? round(($subLabaBersih / $subPendapatan) * 100, 2) : 0,
+                    ];
+                }
+                
+                $mainEntityOnlyData = $entityData->whereNull('sub_entity_id');
+                if ($mainEntityOnlyData->isNotEmpty()) {
+                    $subPendapatan = $mainEntityOnlyData->sum('pendapatan');
+                    $subLabaKotor = $mainEntityOnlyData->sum('laba_kotor');
+                    $subLabaBersih = $mainEntityOnlyData->sum('laba_bersih');
+                    $subHpp = 0;
+                    foreach ($mainEntityOnlyData as $ed) {
+                        $subHpp += $ed->items->where('category', 'hpp')->sum('amount');
+                    }
+                    
+                    $mainEntityRow['subRows'][] = [
+                        'id' => $entity->id . '-pusat',
+                        'entity' => $entity->name . ' (Pusat)',
+                        'revenue' => $subPendapatan,
+                        'cogs' => $subHpp,
+                        'gross_margin' => $subPendapatan > 0 ? round(($subLabaKotor / $subPendapatan) * 100, 2) : 0,
+                        'net_margin' => $subPendapatan > 0 ? round(($subLabaBersih / $subPendapatan) * 100, 2) : 0,
+                    ];
+                }
+            }
+            
+            if (empty($mainEntityRow['subRows'])) {
+                unset($mainEntityRow['subRows']);
+            }
+            
+            $entityMargin[] = $mainEntityRow;
         }
 
         usort($entityMargin, fn($a, $b) => $b['revenue'] <=> $a['revenue']);

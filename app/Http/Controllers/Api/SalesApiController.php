@@ -63,14 +63,18 @@ class SalesApiController extends Controller
             $entity = Entity::firstOrCreate(['name' => $t['entity_name']]);
             $endUser = EndUser::firstOrCreate(['name' => $t['end_user_name']]);
 
-            SalesTarget::create([
-                'year' => $t['year'],
-                'month' => $t['month'],
-                'sales_member_id' => $salesMember->id,
-                'entity_id' => $entity->id,
-                'end_user_id' => $endUser->id,
-                'target_amount' => $t['target_amount'],
-            ]);
+            SalesTarget::updateOrCreate(
+                [
+                    'year' => $t['year'],
+                    'month' => $t['month'],
+                    'sales_member_id' => $salesMember->id,
+                    'entity_id' => $entity->id,
+                    'end_user_id' => $endUser->id,
+                ],
+                [
+                    'target_amount' => $t['target_amount'],
+                ]
+            );
         }
 
         return response()->json(['message' => 'Targets saved successfully']);
@@ -136,14 +140,18 @@ class SalesApiController extends Controller
             $entity = Entity::firstOrCreate(['name' => $r['entity_name']]);
             $endUser = EndUser::firstOrCreate(['name' => $r['end_user_name']]);
 
-            SalesRealization::create([
-                'year' => $r['year'],
-                'month' => $r['month'],
-                'sales_member_id' => $salesMember->id,
-                'entity_id' => $entity->id,
-                'end_user_id' => $endUser->id,
-                'realization_amount' => $r['realization_amount'],
-            ]);
+            SalesRealization::updateOrCreate(
+                [
+                    'year' => $r['year'],
+                    'month' => $r['month'],
+                    'sales_member_id' => $salesMember->id,
+                    'entity_id' => $entity->id,
+                    'end_user_id' => $endUser->id,
+                ],
+                [
+                    'realization_amount' => $r['realization_amount'],
+                ]
+            );
         }
 
         return response()->json(['message' => 'Realizations saved successfully']);
