@@ -144,10 +144,16 @@ class ProfitabilityApiController extends Controller
                 $totalHpp += $ed->items->where('category', 'hpp')->sum('amount');
             }
 
+            $totalOverhead = $entityData->sum('total_biaya_overhead');
+            $totalLabaSebelumPajak = $entityData->sum('laba_sebelum_pajak');
+
             $mainEntityRow = [
                 'entity' => $entity->name,
                 'revenue' => $totalPendapatan,
                 'cogs' => $totalHpp,
+                'gross_profit' => $totalLabaKotor,
+                'overhead' => $totalOverhead,
+                'laba_sebelum_pajak' => $totalLabaSebelumPajak,
                 'gross_margin' => $totalPendapatan > 0 ? round(($totalLabaKotor / $totalPendapatan) * 100, 2) : 0,
                 'net_margin' => $totalPendapatan > 0 ? round(($totalLabaBersih / $totalPendapatan) * 100, 2) : 0,
                 'subRows' => []
@@ -160,6 +166,8 @@ class ProfitabilityApiController extends Controller
 
                     $subPendapatan = $subData->sum('pendapatan');
                     $subLabaKotor = $subData->sum('laba_kotor');
+                    $subOverhead = $subData->sum('total_biaya_overhead');
+                    $subLabaSebelumPajak = $subData->sum('laba_sebelum_pajak');
                     $subLabaBersih = $subData->sum('laba_bersih');
                     $subHpp = 0;
                     foreach ($subData as $ed) {
@@ -171,6 +179,9 @@ class ProfitabilityApiController extends Controller
                         'entity' => $subEntity->name,
                         'revenue' => $subPendapatan,
                         'cogs' => $subHpp,
+                        'gross_profit' => $subLabaKotor,
+                        'overhead' => $subOverhead,
+                        'laba_sebelum_pajak' => $subLabaSebelumPajak,
                         'gross_margin' => $subPendapatan > 0 ? round(($subLabaKotor / $subPendapatan) * 100, 2) : 0,
                         'net_margin' => $subPendapatan > 0 ? round(($subLabaBersih / $subPendapatan) * 100, 2) : 0,
                     ];
@@ -180,6 +191,8 @@ class ProfitabilityApiController extends Controller
                 if ($mainEntityOnlyData->isNotEmpty()) {
                     $subPendapatan = $mainEntityOnlyData->sum('pendapatan');
                     $subLabaKotor = $mainEntityOnlyData->sum('laba_kotor');
+                    $subOverhead = $mainEntityOnlyData->sum('total_biaya_overhead');
+                    $subLabaSebelumPajak = $mainEntityOnlyData->sum('laba_sebelum_pajak');
                     $subLabaBersih = $mainEntityOnlyData->sum('laba_bersih');
                     $subHpp = 0;
                     foreach ($mainEntityOnlyData as $ed) {
@@ -191,6 +204,9 @@ class ProfitabilityApiController extends Controller
                         'entity' => $entity->name . ' (Pusat)',
                         'revenue' => $subPendapatan,
                         'cogs' => $subHpp,
+                        'gross_profit' => $subLabaKotor,
+                        'overhead' => $subOverhead,
+                        'laba_sebelum_pajak' => $subLabaSebelumPajak,
                         'gross_margin' => $subPendapatan > 0 ? round(($subLabaKotor / $subPendapatan) * 100, 2) : 0,
                         'net_margin' => $subPendapatan > 0 ? round(($subLabaBersih / $subPendapatan) * 100, 2) : 0,
                     ];
