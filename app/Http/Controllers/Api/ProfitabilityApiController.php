@@ -84,52 +84,8 @@ class ProfitabilityApiController extends Controller
         return response()->json($paginator);
     }
 
-    public function dashboard(Request $request)
+    private function calculateEntityMargin($profitabilities)
     {
-        $year = $request->year ?: date('Y');
-
-        $query = Profitability::with('items')->where('year', $year);
-        $profitabilities = $query->get();
-
-        $totalPendapatan = $profitabilities->sum('pendapatan');
-        $totalLabaKotor = $profitabilities->sum('laba_kotor');
-        $totalLabaOperasi = $profitabilities->sum('laba_operasi');
-        $totalLabaSebelumPajak = $profitabilities->sum('laba_sebelum_pajak');
-        $totalLabaBersih = $profitabilities->sum('laba_bersih');
-
-        $trendData = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $monthData = $profitabilities->where('month', $i);
-            $trendData[] = [
-                'month' => $i,
-                'pendapatan' => $monthData->sum('pendapatan'),
-                'laba_kotor' => $monthData->sum('laba_kotor'),
-                'laba_bersih' => $monthData->sum('laba_bersih'),
-            ];
-        }
-
-        $totalHPP = 0;
-        $totalMarketing = 0;
-        $totalAdmin = 0;
-        $totalNonOps = 0;
-        $totalPajak = 0;
-
-        foreach ($profitabilities as $p) {
-            $totalHPP += $p->items->where('category', 'hpp')->sum('amount');
-            $totalMarketing += $p->items->where('category', 'biaya_marketing')->sum('amount');
-            $totalAdmin += $p->items->where('category', 'biaya_admin')->sum('amount');
-            $totalNonOps += $p->items->where('category', 'biaya_non_ops')->sum('amount');
-            $totalPajak += $p->items->where('category', 'pajak')->sum('amount');
-        }
-
-        $costAllocation = [
-            ['name' => 'HPP (COGS)', 'value' => $totalHPP, 'color' => '#DCF26B'],
-            ['name' => 'Marketing', 'value' => $totalMarketing, 'color' => '#C2EAD4'],
-            ['name' => 'Admin', 'value' => $totalAdmin, 'color' => '#BFE0F2'],
-            ['name' => 'Non-Ops & Lain', 'value' => $totalNonOps, 'color' => '#F4D9C2'],
-            ['name' => 'Pajak', 'value' => $totalPajak, 'color' => '#FFB6C1'],
-        ];
-
         $entityMargin = [];
         $entities = Entity::with('subEntities')->get();
         foreach ($entities as $entity) {
@@ -200,7 +156,7 @@ class ProfitabilityApiController extends Controller
                     }
                     
                     $mainEntityRow['subRows'][] = [
-                        'id' => $entity->id . '-pusat',
+                        'id' => $entity->id . '-main',
                         'entity' => $entity->name . ' (Pusat)',
                         'revenue' => $subPendapatan,
                         'cogs' => $subHpp,
@@ -212,15 +168,66 @@ class ProfitabilityApiController extends Controller
                     ];
                 }
             }
-            
             if (empty($mainEntityRow['subRows'])) {
                 unset($mainEntityRow['subRows']);
             }
-            
             $entityMargin[] = $mainEntityRow;
         }
-
         usort($entityMargin, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
+        return $entityMargin;
+    }
+
+    public function dashboard(Request $request)
+    {
+        $year = $request->year ?: date('Y');
+        $month = $request->month;
+        $chartMonth = $request->chart_month;
+        $tableMonth = $request->table_month;
+
+        $yearlyProfitabilities = Profitability::with('items')->where('year', $year)->get();
+        
+        $trendData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthData = $yearlyProfitabilities->where('month', $i);
+            $trendData[] = [
+                'month' => $i,
+                'pendapatan' => $monthData->sum('pendapatan'),
+                'laba_kotor' => $monthData->sum('laba_kotor'),
+                'laba_bersih' => $monthData->sum('laba_bersih'),
+            ];
+        }
+
+        $profitabilities = $month ? $yearlyProfitabilities->where('month', (int)$month) : $yearlyProfitabilities;
+        $chartProfitabilities = $chartMonth ? $yearlyProfitabilities->where('month', (int)$chartMonth) : $yearlyProfitabilities;
+        $tableProfitabilities = $tableMonth ? $yearlyProfitabilities->where('month', (int)$tableMonth) : $yearlyProfitabilities;
+
+        $totalPendapatan = $profitabilities->sum('pendapatan');
+        $totalLabaKotor = $profitabilities->sum('laba_kotor');
+        $totalLabaOperasi = $profitabilities->sum('laba_operasi');
+        $totalLabaSebelumPajak = $profitabilities->sum('laba_sebelum_pajak');
+        $totalLabaBersih = $profitabilities->sum('laba_bersih');
+
+        $totalHPP = 0;
+        $totalMarketing = 0;
+        $totalAdmin = 0;
+        $totalNonOps = 0;
+        $totalPajak = 0;
+
+        foreach ($profitabilities as $p) {
+            $totalHPP += $p->items->where('category', 'hpp')->sum('amount');
+            $totalMarketing += $p->items->where('category', 'biaya_marketing')->sum('amount');
+            $totalAdmin += $p->items->where('category', 'biaya_admin')->sum('amount');
+            $totalNonOps += $p->items->where('category', 'biaya_non_ops')->sum('amount');
+            $totalPajak += $p->items->where('category', 'pajak')->sum('amount');
+        }
+
+        $costAllocation = [
+            ['name' => 'HPP (COGS)', 'value' => $totalHPP, 'color' => '#DCF26B'],
+            ['name' => 'Marketing', 'value' => $totalMarketing, 'color' => '#C2EAD4'],
+            ['name' => 'Admin', 'value' => $totalAdmin, 'color' => '#BFE0F2'],
+            ['name' => 'Non-Ops & Lain', 'value' => $totalNonOps, 'color' => '#F4D9C2'],
+            ['name' => 'Pajak', 'value' => $totalPajak, 'color' => '#FFB6C1'],
+        ];
 
         return response()->json([
             'summary' => [
@@ -232,7 +239,8 @@ class ProfitabilityApiController extends Controller
             ],
             'trend' => $trendData,
             'cost_allocation' => array_values(array_filter($costAllocation, fn($c) => $c['value'] > 0)),
-            'entity_margin' => $entityMargin,
+            'entity_margin_chart' => $this->calculateEntityMargin($chartProfitabilities),
+            'entity_margin_table' => $this->calculateEntityMargin($tableProfitabilities),
             'year' => $year
         ]);
     }

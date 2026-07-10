@@ -42,6 +42,14 @@ class SalesApiController extends Controller
         $query = SalesTarget::with(['salesMember', 'entity', 'endUser']);
         if ($request->year) $query->where('year', $request->year);
         if ($request->month) $query->where('month', $request->month);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('salesMember', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('entity', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('endUser', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
+            });
+        }
         
         return response()->json($query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate(10));
     }
@@ -119,6 +127,14 @@ class SalesApiController extends Controller
         $query = SalesRealization::with(['salesMember', 'entity', 'endUser']);
         if ($request->year) $query->where('year', $request->year);
         if ($request->month) $query->where('month', $request->month);
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('salesMember', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('entity', fn($sq) => $sq->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('endUser', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
+            });
+        }
         
         return response()->json($query->orderBy('year', 'desc')->orderBy('month', 'desc')->paginate(10));
     }

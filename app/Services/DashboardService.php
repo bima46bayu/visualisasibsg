@@ -44,6 +44,23 @@ class DashboardService
         $totalRealization = (clone $realizationQuery)->sum('realization_amount');
         $achievementPercent = $totalTarget > 0 ? round(($totalRealization / $totalTarget) * 100, 2) : 0;
 
+        $isPivotOnly = isset($filters['pivot_only']) && $filters['pivot_only'] === 'true';
+
+        $filterMeta = [
+            'year' => $year,
+            'curr_month' => $filters['month'] ?? date('n'),
+            'prev_month' => ($filters['month'] ?? date('n')) > 1 ? ($filters['month'] ?? date('n')) - 1 : null,
+            'pivot_curr_month' => $filters['pivot_month'] ?? $filters['month'] ?? date('n'),
+            'pivot_prev_month' => ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) > 1 ? ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) - 1 : null
+        ];
+
+        if ($isPivotOnly) {
+            return [
+                'pivot_table' => $this->getPivotTableData($filters),
+                'filter_meta' => $filterMeta
+            ];
+        }
+
         return [
             'total_target' => $totalTarget,
             'total_realization' => $totalRealization,
@@ -57,13 +74,7 @@ class DashboardService
             'entity_trends_yearly' => $this->getEntityYearlyTrends($filters),
             'yearly_trend' => $this->getYearlyData($filters),
             'pivot_table' => $this->getPivotTableData($filters),
-            'filter_meta' => [
-                'year' => $year,
-                'curr_month' => $filters['month'] ?? date('n'),
-                'prev_month' => ($filters['month'] ?? date('n')) > 1 ? ($filters['month'] ?? date('n')) - 1 : null,
-                'pivot_curr_month' => $filters['pivot_month'] ?? $filters['month'] ?? date('n'),
-                'pivot_prev_month' => ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) > 1 ? ($filters['pivot_month'] ?? $filters['month'] ?? date('n')) - 1 : null
-            ]
+            'filter_meta' => $filterMeta
         ];
     }
 
