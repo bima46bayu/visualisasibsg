@@ -64,3 +64,12 @@ Route::middleware('auth:sanctum')->prefix('profitabilities')->group(function () 
     Route::put('/{id}', [ProfitabilityApiController::class, 'update']);
     Route::delete('/{id}', [ProfitabilityApiController::class, 'destroy']);
 });
+
+use App\Http\Controllers\SalesActivityController;
+Route::middleware('auth:sanctum')->prefix('sales-activities')->group(function () {
+    Route::get('/', [SalesActivityController::class, 'index']);
+    Route::post('/', [SalesActivityController::class, 'store']);
+    Route::get('/{id}', [SalesActivityController::class, 'show']);
+    Route::put('/{id}', [SalesActivityController::class, 'update']);
+    Route::delete('/{id}', [SalesActivityController::class, 'destroy']);
+});

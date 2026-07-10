@@ -1,0 +1,329 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Sales Activity API",
+        "description": "API documentation for Sales Activities CRUD",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Local API Server"
+        }
+    ],
+    "paths": {
+        "/api/sales-activities": {
+            "get": {
+                "tags": [
+                    "Sales Activities"
+                ],
+                "summary": "Get list of sales activities",
+                "description": "Returns list of sales activities with pagination, search, and filtering",
+                "operationId": "getSalesActivitiesList",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search keyword",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Sales Activities"
+                ],
+                "summary": "Store new sales activity",
+                "description": "Create a new sales activity",
+                "operationId": "storeSalesActivity",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "date",
+                                    "sales_name"
+                                ],
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-10"
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "example": "08:00:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "example": "10:00:00"
+                                    },
+                                    "sales_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "destination_type": {
+                                        "type": "string",
+                                        "example": "Corporate"
+                                    },
+                                    "destination_name": {
+                                        "type": "string",
+                                        "example": "PT. Example"
+                                    },
+                                    "team_involved": {
+                                        "type": "string",
+                                        "example": "Team A"
+                                    },
+                                    "activity_type": {
+                                        "type": "string",
+                                        "example": "Meeting"
+                                    },
+                                    "activities": {
+                                        "type": "string",
+                                        "example": "Discussing features"
+                                    },
+                                    "report": {
+                                        "type": "string",
+                                        "example": "Client interested"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/sales-activities/{id}": {
+            "get": {
+                "tags": [
+                    "Sales Activities"
+                ],
+                "summary": "Get sales activity information",
+                "description": "Returns sales activity data",
+                "operationId": "getSalesActivityById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Sales Activity id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Sales Activities"
+                ],
+                "summary": "Update existing sales activity",
+                "description": "Update sales activity data",
+                "operationId": "updateSalesActivity",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Sales Activity id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "date",
+                                    "sales_name"
+                                ],
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-10"
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "example": "08:00:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "example": "10:00:00"
+                                    },
+                                    "sales_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "destination_type": {
+                                        "type": "string",
+                                        "example": "Corporate"
+                                    },
+                                    "destination_name": {
+                                        "type": "string",
+                                        "example": "PT. Example"
+                                    },
+                                    "team_involved": {
+                                        "type": "string",
+                                        "example": "Team A"
+                                    },
+                                    "activity_type": {
+                                        "type": "string",
+                                        "example": "Meeting"
+                                    },
+                                    "activities": {
+                                        "type": "string",
+                                        "example": "Discussing features"
+                                    },
+                                    "report": {
+                                        "type": "string",
+                                        "example": "Client interested"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Sales Activities"
+                ],
+                "summary": "Delete existing sales activity",
+                "description": "Deletes a record and returns success message",
+                "operationId": "deleteSalesActivity",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Sales Activity id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Sales Activities",
+            "description": "Sales Activities"
+        }
+    ]
+}
