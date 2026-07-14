@@ -68,6 +68,49 @@ class ProfitabilityApiController extends Controller
         return response()->json(['message' => 'Sub Entity deleted successfully']);
     }
 
+    public function getDescriptions()
+    {
+        $descriptions = \App\Models\ProfitabilityDescription::all();
+        return response()->json($descriptions);
+    }
+
+    public function storeDescription(Request $request)
+    {
+        $data = $request->validate([
+            'category' => 'required|string',
+            'name' => 'required|string',
+        ]);
+
+        $existing = \App\Models\ProfitabilityDescription::where('category', $data['category'])
+            ->where('name', $data['name'])
+            ->first();
+            
+        if ($existing) {
+            return response()->json($existing, 200);
+        }
+
+        $description = \App\Models\ProfitabilityDescription::create($data);
+        return response()->json($description, 201);
+    }
+
+    public function updateDescription(Request $request, $id)
+    {
+        $data = $request->validate([
+            'category' => 'required|string',
+            'name' => 'required|string',
+        ]);
+
+        $description = \App\Models\ProfitabilityDescription::findOrFail($id);
+        $description->update($data);
+        return response()->json($description);
+    }
+
+    public function destroyDescription($id)
+    {
+        \App\Models\ProfitabilityDescription::findOrFail($id)->delete();
+        return response()->json(['message' => 'Description deleted successfully']);
+    }
+
     public function index(Request $request)
     {
         $query = Profitability::with(['entity', 'subEntity', 'items']);

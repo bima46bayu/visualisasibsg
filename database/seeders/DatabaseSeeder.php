@@ -27,5 +27,9 @@ class DatabaseSeeder extends Seeder
             'password' => 'password123',
             'role' => 'admin'
         ]);
+
+        $this->call([
+            ProfitabilityDescriptionSeeder::class,
+        ]);
     }
 }

@@ -55,6 +55,11 @@ Route::middleware('auth:sanctum')->prefix('profitabilities')->group(function () 
     Route::put('/sub-entities/{id}', [ProfitabilityApiController::class, 'updateSubEntity']);
     Route::delete('/sub-entities/{id}', [ProfitabilityApiController::class, 'destroySubEntity']);
 
+    Route::get('/descriptions', [ProfitabilityApiController::class, 'getDescriptions']);
+    Route::post('/descriptions', [ProfitabilityApiController::class, 'storeDescription']);
+    Route::put('/descriptions/{id}', [ProfitabilityApiController::class, 'updateDescription']);
+    Route::delete('/descriptions/{id}', [ProfitabilityApiController::class, 'destroyDescription']);
+
     Route::get('/dashboard', [ProfitabilityApiController::class, 'dashboard']);
     Route::get('/export', [ProfitabilityApiController::class, 'export']);
     Route::get('/export-template', [ProfitabilityApiController::class, 'exportTemplate']);
