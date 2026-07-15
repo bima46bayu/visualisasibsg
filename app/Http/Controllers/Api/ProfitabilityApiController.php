@@ -279,6 +279,8 @@ class ProfitabilityApiController extends Controller
                 'laba_operasi' => $totalLabaOperasi,
                 'laba_sebelum_pajak' => $totalLabaSebelumPajak,
                 'laba_bersih' => $totalLabaBersih,
+                'hpp' => $totalHPP,
+                'overhead' => $totalMarketing + $totalAdmin + $totalNonOps,
             ],
             'trend' => $trendData,
             'cost_allocation' => array_values(array_filter($costAllocation, fn($c) => $c['value'] > 0)),
@@ -286,6 +288,101 @@ class ProfitabilityApiController extends Controller
             'entity_margin_table' => $this->calculateEntityMargin($tableProfitabilities),
             'year' => $year
         ]);
+    }
+
+    public function getMonthlyMatrix(Request $request)
+    {
+        $year = $request->year ?: date('Y');
+        $entityParam = $request->entity_id;
+        
+        $entityId = null;
+        $subEntityId = null;
+
+        if ($entityParam) {
+            if (strpos($entityParam, '|') !== false) {
+                list($entityId, $subEntityId) = explode('|', $entityParam);
+            } else {
+                $entityId = $entityParam;
+            }
+        }
+
+        if (!$entityId) {
+            $firstEntity = Entity::first();
+            if ($firstEntity) {
+                $entityId = $firstEntity->id;
+                // If it has sub entities, default to the first sub entity
+                $firstSub = ProfitabilitySubEntity::where('entity_id', $entityId)->first();
+                if ($firstSub) {
+                    $subEntityId = $firstSub->id;
+                }
+            } else {
+                return response()->json([]);
+            }
+        }
+
+        // Get profitability records for this entity, sub-entity, and year
+        $query = Profitability::with('items')
+            ->where('year', $year)
+            ->where('entity_id', $entityId);
+
+        if ($subEntityId) {
+            $query->where('sub_entity_id', $subEntityId);
+        } else {
+            $query->whereNull('sub_entity_id');
+        }
+
+        $records = $query->get();
+
+        // We want to construct a matrix of categories and months (1 to 12)
+        $categories = [
+            'pendapatan' => 'Pendapatan',
+            'hpp' => 'Harga Pokok Penjualan (HPP)',
+            'laba_kotor' => 'Laba Kotor',
+            'biaya_marketing' => 'Biaya Marketing',
+            'biaya_admin' => 'Biaya Admin & Umum',
+            'biaya_non_ops' => 'Biaya Non Operasional',
+            'total_biaya_overhead' => 'Total Biaya Overhead',
+            'laba_operasi' => 'Laba Operasi',
+            'pendapatan_lain' => 'Pendapatan Lain',
+            'biaya_lain' => 'Biaya Lain (Bunga, dll)',
+            'laba_sebelum_pajak' => 'Laba Bersih Sebelum Pajak',
+            'pajak' => 'Pajak',
+            'laba_bersih' => 'Laba Bersih Setelah Pajak',
+        ];
+
+        $matrix = [];
+        foreach ($categories as $key => $label) {
+            $row = [
+                'category' => $key,
+                'description' => $label,
+            ];
+            for ($m = 1; $m <= 12; $m++) {
+                $record = $records->where('month', $m)->first();
+                
+                $value = 0;
+                if ($record) {
+                    if ($key === 'laba_kotor') {
+                        $value = $record->laba_kotor;
+                    } elseif ($key === 'total_biaya_overhead') {
+                        $value = $record->total_biaya_overhead;
+                    } elseif ($key === 'laba_operasi') {
+                        $value = $record->laba_operasi;
+                    } elseif ($key === 'laba_sebelum_pajak') {
+                        $value = $record->laba_sebelum_pajak;
+                    } elseif ($key === 'laba_bersih') {
+                        $value = $record->laba_bersih;
+                    } elseif ($key === 'pendapatan') {
+                        $value = $record->pendapatan;
+                    } else {
+                        $value = $record->items->where('category', $key)->sum('amount');
+                    }
+                }
+                $row['m' . $m] = $value;
+            }
+            $matrix[] = $row;
+        }
+
+        return response()->json($matrix);
     }
 
     private function syncItems($profitability, $data)

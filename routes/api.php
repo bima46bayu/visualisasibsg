@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->prefix('profitabilities')->group(function () 
     Route::delete('/descriptions/{id}', [ProfitabilityApiController::class, 'destroyDescription']);
 
     Route::get('/dashboard', [ProfitabilityApiController::class, 'dashboard']);
+    Route::get('/monthly-matrix', [ProfitabilityApiController::class, 'getMonthlyMatrix']);
     Route::get('/export', [ProfitabilityApiController::class, 'export']);
     Route::get('/export-template', [ProfitabilityApiController::class, 'exportTemplate']);
     Route::post('/import', [ProfitabilityApiController::class, 'import']);
